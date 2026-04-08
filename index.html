@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Resonance — EchoPlay</title>
+  <style>
+    /* ── Reset ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #07090f;
+      --surface: #0d1524;
+      --border: #1a2540;
+      --glow-c: #4af3ff;
+      --glow-p: #8b5cf6;
+      --text: #dde8ff;
+      --text-dim: #5a6a8a;
+      --accent: #4af3ff;
+      --radius: 16px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── Platform homepage ───────────────────────────────────────── */
+    .platform-home {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+      text-align: center;
+    }
+    .platform-home.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .home-logo {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      background: linear-gradient(135deg, var(--glow-c), var(--glow-p));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    .home-tagline {
+      color: var(--text-dim);
+      font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 3rem;
+    }
+    .home-fingerprint-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.5rem;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 0 40px rgba(74,243,255,0.07);
+    }
+    .home-fingerprint-card h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      margin-bottom: 1.5rem;
+    }
+    .home-fp-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+    }
+    .home-fp-label { color: var(--text-dim); }
+    .home-fp-value {
+      color: var(--accent);
+      font-weight: 600;
+      text-align: right;
+      max-width: 60%;
+    }
+    .home-nav {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 3rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .nav-item {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-item:hover { color: var(--accent); }
+
+    /* ── Modal overlay ───────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      background: rgba(4,6,10,0.96);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      transition: opacity 0.7s ease;
+    }
+    .modal-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 520px;
+      padding: 2.5rem 2rem;
+      position: relative;
+      box-shadow: 0 0 80px rgba(74,243,255,0.1), 0 0 160px rgba(139,92,246,0.06);
+      overflow: hidden;
+    }
+
+    /* glowing corner accents */
+    .modal-box::before, .modal-box::after {
+      content: '';
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .modal-box::before {
+      top: -40px; left: -40px;
+      background: radial-gradient(circle, rgba(74,243,255,0.15) 0%, transparent 70%);
+    }
+    .modal-box::after {
+      bottom: -40px; right: -40px;
+      background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+    }
+
+    /* ── Screen helpers ─────────────────────────────────────────── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Intro screen ───────────────────────────────────────────── */
+    .intro-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+    .intro-title {
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--glow-c) 0%, var(--glow-p) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.2rem;
+      line-height: 1.2;
+    }
+    .intro-desc {
+      color: var(--text-dim);
+      font-size: 0.92rem;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+    }
+    .intro-steps {
+      list-style: none;
+      margin-bottom: 2.5rem;
+    }
+    .intro-steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 0.9rem;
+    }
+    .step-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+
+    /* ── Game screen ────────────────────────────────────────────── */
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+    .game-title {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .timer-ring {
+      position: relative;
+      width: 48px;
+      height: 48px;
+    }
+    .timer-svg { transform: rotate(-90deg); }
+    .timer-track { stroke: var(--border); }
+    .timer-progress {
+      stroke: var(--accent);
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s linear;
+      filter: drop-shadow(0 0 4px var(--accent));
+    }
+    .timer-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* 2-D interactive pad */
+    .pad-container {
+      position: relative;
+      margin: 0 auto 1.25rem;
+    }
+    .pad-axis-label {
+      position: absolute;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      user-select: none;
+    }
+    .label-pitch-high { top: 0; left: 50%; transform: translate(-50%, -150%); }
+    .label-pitch-low  { bottom: 0; left: 50%; transform: translate(-50%, 150%); }
+    .label-rhythm-sparse { left: 0; top: 50%; transform: translate(-115%, -50%); }
+    .label-rhythm-dense  { right: 0; top: 50%; transform: translate(115%, -50%); }
+
+    #echo-pad {
+      display: block;
+      width: 100%;
+      border-radius: 16px;
+      cursor: crosshair;
+      touch-action: none;
+      background: transparent;
+    }
+
+    .game-controls {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ── Result screen ──────────────────────────────────────────── */
+    .result-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+    .result-fp-label {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--glow-c), var(--glow-p));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+    }
+    .result-sentence {
+      color: var(--text-dim);
+      font-size: 0.88rem;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .result-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 380px) { .result-cards { grid-template-columns: 1fr; } }
+    .result-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .result-card-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.4rem;
+    }
+    .result-card-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .result-card-value.accent { color: var(--accent); }
+    .result-card-value.purple { color: #a78bfa; }
+
+    .result-waveform {
+      margin: 0 auto 1.5rem;
+      display: block;
+    }
+    .result-playing-note {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .result-playing-note span { color: var(--accent); }
+
+    /* ── Shared button ──────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 2rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--glow-c), #0a8aff);
+      color: #070b15;
+      box-shadow: 0 0 20px rgba(74,243,255,0.3);
+    }
+    .btn-primary:hover { box-shadow: 0 0 30px rgba(74,243,255,0.5); }
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      box-shadow: 0 0 12px rgba(74,243,255,0.1);
+    }
+    .btn-outline:hover { box-shadow: 0 0 20px rgba(74,243,255,0.25); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text-dim); }
+    .btn-sm { padding: 0.55rem 1.4rem; font-size: 0.78rem; }
+
+    /* ── Pulse animation for cursor dot ───────────────────────── */
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* ── Breathing animation for intro glyph ─────────────────── */
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.06); opacity: 1; }
+    }
+    .glyph {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.5rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(74,243,255,0.2) 0%, rgba(139,92,246,0.12) 60%, transparent 80%);
+      border: 1px solid rgba(74,243,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: breathe 3s ease-in-out infinite;
+    }
+    .glyph svg { width: 28px; height: 28px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ Main platform homepage ═════════════════════════ -->
+<main id="platform-home" class="platform-home" aria-hidden="true">
+  <div class="home-logo">Resonance</div>
+  <div class="home-tagline">EchoPlay · Your Emotional Universe</div>
+
+  <div id="home-fp-card" class="home-fingerprint-card" style="display:none">
+    <h2>Your Emotional Fingerprint</h2>
+    <div class="home-fp-row">
+      <span class="home-fp-label">Identity</span>
+      <span class="home-fp-value" id="home-username"></span>
+    </div>
+    <div class="home-fp-row">
+      <span class="home-fp-label">Fingerprint</span>
+      <span class="home-fp-value" id="home-fp"></span>
+    </div>
+    <div class="home-fp-row">
+      <span class="home-fp-label">Community</span>
+      <span class="home-fp-value" id="home-community"></span>
+    </div>
+    <div class="home-fp-row" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+      <span class="home-fp-label">Pitch</span>
+      <span class="home-fp-value" id="home-pitch"></span>
+    </div>
+    <div class="home-fp-row">
+      <span class="home-fp-label">Rhythm</span>
+      <span class="home-fp-value" id="home-rhythm"></span>
+    </div>
+  </div>
+
+  <nav class="home-nav">
+    <a href="#" class="nav-item">Explore</a>
+    <a href="#" class="nav-item">Communities</a>
+    <a href="#" class="nav-item">My Echo</a>
+    <a href="#" class="nav-item">About</a>
+  </nav>
+</main>
+
+<!-- ═══════════ Game Modal ══════════════════════════════════════ -->
+<div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Your First Echo mini-game">
+  <div class="modal-box">
+
+    <!-- ── Intro Screen ─────────────────────────────────────── -->
+    <div id="screen-intro" class="screen active">
+      <div class="glyph">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2C14 2 6 8 6 16a8 8 0 0016 0C22 8 14 2 14 2z" stroke="#4af3ff" stroke-width="1.5" stroke-linejoin="round"/>
+          <circle cx="14" cy="16" r="3" stroke="#8b5cf6" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <p class="intro-eyebrow">Resonance · EchoPlay</p>
+      <h1 class="intro-title">Your First Echo</h1>
+      <p class="intro-desc">
+        In the next few seconds you will shape your very first sound. It becomes
+        your <em>emotional fingerprint</em> — a unique key to the Resonance universe.
+      </p>
+      <ul class="intro-steps">
+        <li>
+          <span class="step-icon">↕</span>
+          <span>Slide <strong>up&nbsp;/&nbsp;down</strong> to change pitch — from deep &amp; calm to bright &amp; alive.</span>
+        </li>
+        <li>
+          <span class="step-icon">↔</span>
+          <span>Slide <strong>left&nbsp;/&nbsp;right</strong> to change rhythm — from sparse &amp; slow to dense &amp; fast.</span>
+        </li>
+        <li>
+          <span class="step-icon">◎</span>
+          <span>Your sound evolves in real-time. After 10 seconds your echo is captured.</span>
+        </li>
+      </ul>
+      <div style="display:flex;justify-content:center;">
+        <button class="btn btn-primary" id="btn-begin">Begin ›</button>
+      </div>
+    </div>
+
+    <!-- ── Game Screen ──────────────────────────────────────── -->
+    <div id="screen-game" class="screen">
+      <div class="game-header">
+        <span class="game-title">Shape Your Echo</span>
+        <div class="timer-ring">
+          <svg class="timer-svg" width="48" height="48" viewBox="0 0 48 48">
+            <circle class="timer-track" cx="24" cy="24" r="20" fill="none" stroke-width="3"/>
+            <circle id="timer-arc" class="timer-progress" cx="24" cy="24" r="20" fill="none"
+              stroke-width="3" stroke-dasharray="125.66" stroke-dashoffset="0"/>
+          </svg>
+          <div class="timer-text" id="timer-text">10</div>
+        </div>
+      </div>
+
+      <!-- Axis labels + pad -->
+      <div class="pad-container" style="padding: 22px 30px;">
+        <span class="pad-axis-label label-pitch-high">Bright / Excited</span>
+        <span class="pad-axis-label label-pitch-low">Deep / Calm</span>
+        <span class="pad-axis-label label-rhythm-sparse">Sparse</span>
+        <span class="pad-axis-label label-rhythm-dense">Dense</span>
+        <canvas id="echo-pad" width="460" height="260"></canvas>
+      </div>
+
+      <div class="game-controls">
+        <button class="btn btn-outline btn-sm" id="btn-finish">Finish &amp; Capture</button>
+      </div>
+    </div>
+
+    <!-- ── Result Screen ────────────────────────────────────── -->
+    <div id="screen-result" class="screen">
+      <p class="result-eyebrow">Emotional Fingerprint</p>
+      <div class="result-fp-label" id="result-fp-label">—</div>
+      <p class="result-sentence" id="result-sentence"></p>
+
+      <canvas id="result-wave" class="result-waveform" width="440" height="70"></canvas>
+      <p class="result-playing-note" id="result-note-info">Playing your echo&hellip;</p>
+
+      <div class="result-cards">
+        <div class="result-card">
+          <div class="result-card-label">Your ID</div>
+          <div class="result-card-value accent" id="result-username">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label">Community Match</div>
+          <div class="result-card-value purple" id="result-community">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label">Pitch</div>
+          <div class="result-card-value" id="result-pitch">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label">Rhythm</div>
+          <div class="result-card-value" id="result-rhythm">—</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" id="btn-enter">Enter Resonance ›</button>
+        <button class="btn btn-ghost btn-sm" id="btn-replay">Try Again</button>
+      </div>
+    </div>
+
+  </div><!-- /modal-box -->
+</div><!-- /modal-overlay -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   YOUR FIRST ECHO — Emotional Fingerprint Mini-Game
+   Resonance · EchoPlay
+   ═══════════════════════════════════════════════════════════════ */
+
+'use strict';
+
+/* ── DOM refs ─────────────────────────────────────────────────── */
+const modalOverlay  = document.getElementById('modal-overlay');
+const platformHome  = document.getElementById('platform-home');
+const screenIntro   = document.getElementById('screen-intro');
+const screenGame    = document.getElementById('screen-game');
+const screenResult  = document.getElementById('screen-result');
+const btnBegin      = document.getElementById('btn-begin');
+const btnFinish     = document.getElementById('btn-finish');
+const btnEnter      = document.getElementById('btn-enter');
+const btnReplay     = document.getElementById('btn-replay');
+const timerArc      = document.getElementById('timer-arc');
+const timerText     = document.getElementById('timer-text');
+const echoPad       = document.getElementById('echo-pad');
+const padCtx        = echoPad.getContext('2d');
+const resultWave    = document.getElementById('result-wave');
+const waveCtx       = resultWave.getContext('2d');
+
+/* ── Game state ───────────────────────────────────────────────── */
+const GAME_DURATION = 10; // seconds
+const CIRCUMFERENCE = 2 * Math.PI * 20; // r=20 for the SVG circle
+
+let state = {
+  pitchNorm:  0.5,   // 0=deep/sad  1=bright/excited  (inverted: top=1)
+  rhythmNorm: 0.5,   // 0=sparse    1=dense
+  active:     false,
+  timerSecs:  GAME_DURATION,
+  timerInterval: null,
+  autoFinishTimeout: null,
+  hasInteracted: false,
+};
+
+/* ── Audio engine ─────────────────────────────────────────────── */
+let audioCtx      = null;
+let osc           = null;   // main oscillator
+let oscGain       = null;   // oscillator output gain
+let lfoOsc        = null;   // LFO for rhythm pulse
+let lfoGain       = null;   // LFO depth
+let masterGain    = null;
+let reverbGain    = null;
+let convolver     = null;
+let analyser      = null;
+
+// Map pitch norm [0,1] to frequency [90, 880] Hz (low→deep, high→bright)
+function pitchToFreq(p) {
+  const lo = 90, hi = 880;
+  return lo * Math.pow(hi / lo, p);
+}
+
+// Map rhythm norm [0,1] to LFO rate [0.3, 10] Hz
+function rhythmToLFO(r) {
+  return 0.3 + r * 9.7;
+}
+
+function createImpulse(ctx, duration, decay) {
+  const sr     = ctx.sampleRate;
+  const length = sr * duration;
+  const buf    = ctx.createBuffer(2, length, sr);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+    }
+  }
+  return buf;
+}
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+  analyser  = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+
+  masterGain = audioCtx.createGain();
+  masterGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+  masterGain.connect(analyser);
+  analyser.connect(audioCtx.destination);
+
+  // Reverb
+  convolver = audioCtx.createConvolver();
+  convolver.buffer = createImpulse(audioCtx, 2.5, 3);
+  reverbGain = audioCtx.createGain();
+  reverbGain.gain.value = 0.35;
+  convolver.connect(reverbGain);
+  reverbGain.connect(masterGain);
+
+  // Main oscillator
+  osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = pitchToFreq(state.pitchNorm);
+
+  // Second harmonic for warmth
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'triangle';
+  osc2.frequency.value = pitchToFreq(state.pitchNorm) * 1.5;
+  const osc2Gain = audioCtx.createGain();
+  osc2Gain.gain.value = 0.18;
+
+  // LFO for rhythmic amplitude modulation
+  lfoOsc  = audioCtx.createOscillator();
+  lfoOsc.type = 'sine';
+  lfoOsc.frequency.value = rhythmToLFO(state.rhythmNorm);
+
+  lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 0.5;
+
+  oscGain = audioCtx.createGain();
+  oscGain.gain.value = 0.7;
+
+  // Envelope: LFO modulates oscGain bias
+  const bias = audioCtx.createConstantSource();
+  bias.offset.value = 0.5;
+  bias.start();
+
+  lfoOsc.connect(lfoGain);
+  lfoGain.connect(oscGain.gain);
+  bias.connect(oscGain.gain);
+
+  osc.connect(oscGain);
+  osc2.connect(osc2Gain);
+  osc2Gain.connect(oscGain);
+
+  oscGain.connect(masterGain);
+  oscGain.connect(convolver);
+
+  osc.start();
+  osc2.start();
+  lfoOsc.start();
+}
+
+function startAudio() {
+  if (!audioCtx) initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
+  masterGain.gain.linearRampToValueAtTime(0.55, audioCtx.currentTime + 0.4);
+}
+
+function stopAudio(fadeTime = 0.6) {
+  if (!masterGain) return;
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
+  masterGain.gain.linearRampToValueAtTime(0.0, audioCtx.currentTime + fadeTime);
+}
+
+function updateAudio() {
+  if (!osc || !lfoOsc) return;
+  const t   = audioCtx.currentTime;
+  const freq = pitchToFreq(state.pitchNorm);
+  osc.frequency.cancelScheduledValues(t);
+  osc.frequency.setValueAtTime(osc.frequency.value, t);
+  osc.frequency.linearRampToValueAtTime(freq, t + 0.05);
+
+  // Update LFO rate for rhythm
+  const lfoRate = rhythmToLFO(state.rhythmNorm);
+  lfoOsc.frequency.cancelScheduledValues(t);
+  lfoOsc.frequency.setValueAtTime(lfoOsc.frequency.value, t);
+  lfoOsc.frequency.linearRampToValueAtTime(lfoRate, t + 0.08);
+}
+
+/* ── Result audio fragment (6–10 sec generative melody) ───────── */
+let resultAudioTimeout = null;
+let resultNoteTimeouts = [];
+
+const SCALES = {
+  minorPentatonic: [0, 3, 5, 7, 10],
+  majorPentatonic: [0, 2, 4, 7, 9],
+  dorian:          [0, 2, 3, 5, 7, 9, 10],
+  lydian:          [0, 2, 4, 6, 7, 9, 11],
+  wholeTone:       [0, 2, 4, 6, 8, 10],
+};
+
+function midiToHz(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function playResultFragment(pitchNorm, rhythmNorm, onComplete) {
+  if (!audioCtx) initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  // Choose scale by fingerprint quadrant
+  let scaleName, baseOctave;
+  if (pitchNorm >= 0.66 && rhythmNorm >= 0.5)      { scaleName = 'wholeTone';       baseOctave = 5; }
+  else if (pitchNorm >= 0.66 && rhythmNorm < 0.5)  { scaleName = 'lydian';          baseOctave = 5; }
+  else if (pitchNorm >= 0.33 && rhythmNorm >= 0.5) { scaleName = 'dorian';          baseOctave = 4; }
+  else if (pitchNorm >= 0.33 && rhythmNorm < 0.5)  { scaleName = 'majorPentatonic'; baseOctave = 4; }
+  else if (pitchNorm < 0.33  && rhythmNorm >= 0.5) { scaleName = 'dorian';          baseOctave = 3; }
+  else                                              { scaleName = 'minorPentatonic'; baseOctave = 3; }
+
+  const scale     = SCALES[scaleName];
+  const baseMidi  = (baseOctave + 1) * 12; // C of that octave
+  const noteDur   = rhythmNorm < 0.2 ? 1.4 :
+                    rhythmNorm < 0.5 ? 0.9 :
+                    rhythmNorm < 0.75? 0.55 : 0.3;
+  const gap       = noteDur * (0.1 + (1 - rhythmNorm) * 0.5);
+  const totalDur  = 8;
+  const noteSlot  = noteDur + gap;
+  const numNotes  = Math.floor(totalDur / noteSlot);
+
+  // Clear master gain from interactive mode
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  masterGain.gain.setValueAtTime(0.55, audioCtx.currentTime);
+
+  let t = audioCtx.currentTime + 0.05;
+
+  for (let i = 0; i < numNotes; i++) {
+    const scaleDeg  = scale[i % scale.length];
+    const octShift  = Math.floor(i / scale.length) % 2;
+    const midi      = baseMidi + scaleDeg + octShift * 12;
+    const freq      = midiToHz(midi);
+    const noteStart = t + i * noteSlot;
+
+    const noteOsc  = audioCtx.createOscillator();
+    noteOsc.type   = pitchNorm > 0.5 ? 'triangle' : 'sine';
+    noteOsc.frequency.value = freq;
+
+    const noteGain = audioCtx.createGain();
+    noteGain.gain.setValueAtTime(0, noteStart);
+    noteGain.gain.linearRampToValueAtTime(0.4, noteStart + 0.02);
+    noteGain.gain.linearRampToValueAtTime(0.28, noteStart + noteDur * 0.6);
+    noteGain.gain.linearRampToValueAtTime(0.0,  noteStart + noteDur);
+
+    noteOsc.connect(noteGain);
+    noteGain.connect(masterGain);
+    noteGain.connect(convolver);
+
+    noteOsc.start(noteStart);
+    noteOsc.stop(noteStart + noteDur + 0.05);
+  }
+
+  // Fade out master after totalDur
+  masterGain.gain.linearRampToValueAtTime(0.55, t + totalDur - 1.5);
+  masterGain.gain.linearRampToValueAtTime(0.0,  t + totalDur);
+
+  if (onComplete) {
+    resultAudioTimeout = setTimeout(onComplete, totalDur * 1000);
+  }
+}
+
+function stopResultAudio() {
+  clearTimeout(resultAudioTimeout);
+  resultNoteTimeouts.forEach(clearTimeout);
+  if (masterGain) stopAudio(0.3);
+}
+
+/* ── Pad rendering ────────────────────────────────────────────── */
+const PAD_PARTICLES = Array.from({length: 36}, () => ({
+  x: Math.random(), y: Math.random(),
+  vx: (Math.random()-0.5)*0.002, vy: (Math.random()-0.5)*0.002,
+  r: Math.random()*1.8+0.4, a: Math.random()
+}));
+
+let padAnimId = null;
+let trailPoints = [];
+
+function drawPad() {
+  const W = echoPad.width, H = echoPad.height;
+  padCtx.clearRect(0, 0, W, H);
+
+  // Background gradient
+  const bg = padCtx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0,   'rgba(13,21,36,0.9)');
+  bg.addColorStop(1,   'rgba(7,9,15,0.9)');
+  padCtx.fillStyle = bg;
+  padCtx.beginPath();
+  if (padCtx.roundRect) {
+    padCtx.roundRect(0, 0, W, H, 14);
+  } else {
+    const r = 14;
+    padCtx.moveTo(r, 0);
+    padCtx.lineTo(W - r, 0); padCtx.arcTo(W, 0, W, r, r);
+    padCtx.lineTo(W, H - r); padCtx.arcTo(W, H, W - r, H, r);
+    padCtx.lineTo(r, H);     padCtx.arcTo(0, H, 0, H - r, r);
+    padCtx.lineTo(0, r);     padCtx.arcTo(0, 0, r, 0, r);
+    padCtx.closePath();
+  }
+  padCtx.fill();
+
+  // Grid lines
+  padCtx.strokeStyle = 'rgba(74,243,255,0.07)';
+  padCtx.lineWidth   = 1;
+  for (let i = 1; i < 4; i++) {
+    padCtx.beginPath(); padCtx.moveTo(W*i/4, 0); padCtx.lineTo(W*i/4, H); padCtx.stroke();
+    padCtx.beginPath(); padCtx.moveTo(0, H*i/4); padCtx.lineTo(W, H*i/4); padCtx.stroke();
+  }
+
+  // Floating particles
+  const now = Date.now() * 0.001;
+  PAD_PARTICLES.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+    if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
+    const alpha = 0.2 + 0.1 * Math.sin(now + p.a * 6);
+    padCtx.beginPath();
+    padCtx.arc(p.x*W, p.y*H, p.r, 0, Math.PI*2);
+    padCtx.fillStyle = `rgba(74,243,255,${alpha})`;
+    padCtx.fill();
+  });
+
+  // Trail
+  if (trailPoints.length > 1) {
+    padCtx.beginPath();
+    padCtx.moveTo(trailPoints[0].x * W, trailPoints[0].y * H);
+    for (let i = 1; i < trailPoints.length; i++) {
+      padCtx.lineTo(trailPoints[i].x * W, trailPoints[i].y * H);
+    }
+    padCtx.strokeStyle = 'rgba(74,243,255,0.25)';
+    padCtx.lineWidth   = 2;
+    padCtx.lineJoin    = 'round';
+    padCtx.lineCap     = 'round';
+    padCtx.stroke();
+  }
+
+  // Cursor glow halo
+  const cx = state.rhythmNorm * W;
+  const cy = (1 - state.pitchNorm) * H;
+  const halo = padCtx.createRadialGradient(cx, cy, 0, cx, cy, 55);
+  halo.addColorStop(0,   'rgba(74,243,255,0.18)');
+  halo.addColorStop(0.4, 'rgba(139,92,246,0.08)');
+  halo.addColorStop(1,   'rgba(0,0,0,0)');
+  padCtx.beginPath();
+  padCtx.arc(cx, cy, 55, 0, Math.PI*2);
+  padCtx.fillStyle = halo;
+  padCtx.fill();
+
+  // Cursor dot
+  const pulse = 0.7 + 0.3 * Math.sin(now * 4);
+  padCtx.beginPath();
+  padCtx.arc(cx, cy, 8, 0, Math.PI*2);
+  padCtx.fillStyle = `rgba(74,243,255,${pulse})`;
+  padCtx.shadowColor = '#4af3ff';
+  padCtx.shadowBlur  = 14;
+  padCtx.fill();
+  padCtx.shadowBlur  = 0;
+
+  // Cross-hair lines from cursor
+  padCtx.strokeStyle = 'rgba(74,243,255,0.15)';
+  padCtx.lineWidth   = 1;
+  padCtx.setLineDash([4, 6]);
+  padCtx.beginPath(); padCtx.moveTo(cx, 0); padCtx.lineTo(cx, H); padCtx.stroke();
+  padCtx.beginPath(); padCtx.moveTo(0, cy); padCtx.lineTo(W, cy); padCtx.stroke();
+  padCtx.setLineDash([]);
+
+  padAnimId = requestAnimationFrame(drawPad);
+}
+
+function stopPadAnim() {
+  if (padAnimId) { cancelAnimationFrame(padAnimId); padAnimId = null; }
+}
+
+/* ── Result waveform visualiser ──────────────────────────────── */
+let waveAnimId = null;
+
+function drawResultWave() {
+  const W = resultWave.width, H = resultWave.height;
+  waveCtx.clearRect(0, 0, W, H);
+
+  if (!analyser) return;
+  const bufLen = analyser.frequencyBinCount;
+  const data   = new Uint8Array(bufLen);
+  analyser.getByteTimeDomainData(data);
+
+  waveCtx.beginPath();
+  const sliceW = W / bufLen;
+  let x = 0;
+  for (let i = 0; i < bufLen; i++) {
+    const v = data[i] / 128;
+    const y = (v * H) / 2;
+    if (i === 0) waveCtx.moveTo(x, y);
+    else         waveCtx.lineTo(x, y);
+    x += sliceW;
+  }
+  waveCtx.strokeStyle = '#4af3ff';
+  waveCtx.lineWidth   = 2;
+  waveCtx.shadowColor = '#4af3ff';
+  waveCtx.shadowBlur  = 8;
+  waveCtx.stroke();
+  waveCtx.shadowBlur  = 0;
+
+  waveAnimId = requestAnimationFrame(drawResultWave);
+}
+
+function stopWaveAnim() {
+  if (waveAnimId) { cancelAnimationFrame(waveAnimId); waveAnimId = null; }
+}
+
+/* ── Fingerprint logic ───────────────────────────────────────── */
+const FINGERPRINTS = [
+  // [pitchMin, pitchMax, rhythmMin, rhythmMax, label, community, adj1, adj2]
+  { pMin:0.67, pMax:1,    rMin:0.5, rMax:1,    label:'Radiant Storm',    community:'The High Energy Arena',   adj:'electric, soaring'  },
+  { pMin:0.67, pMax:1,    rMin:0,   rMax:0.5,  label:'Crystal Horizon',  community:'The Open Sky',             adj:'bright, expansive'  },
+  { pMin:0.33, pMax:0.67, rMin:0.5, rMax:1,    label:'Flowing Current',  community:'The Rhythm Collective',    adj:'dynamic, fluid'     },
+  { pMin:0.33, pMax:0.67, rMin:0,   rMax:0.5,  label:'Still Waters',     community:'The Balanced Path',        adj:'centred, grounded'  },
+  { pMin:0,    pMax:0.33, rMin:0.5, rMax:1,    label:'Deep Tide',        community:'The Deep Current',         adj:'intense, mysterious'},
+  { pMin:0,    pMax:0.33, rMin:0,   rMax:0.5,  label:'Silent Root',      community:'The Quiet Trail',          adj:'calm, introspective'},
+];
+
+function getFingerprint(p, r) {
+  return FINGERPRINTS.find(f => p >= f.pMin && p < f.pMax && r >= f.rMin && r < f.rMax) || FINGERPRINTS[5];
+}
+
+function getPitchLabel(p) {
+  if (p > 0.75) return 'Very High';
+  if (p > 0.5)  return 'High';
+  if (p > 0.25) return 'Low';
+  return 'Very Low';
+}
+
+function getRhythmLabel(r) {
+  if (r > 0.75) return 'Very Dense';
+  if (r > 0.5)  return 'Dense';
+  if (r > 0.25) return 'Sparse';
+  return 'Very Sparse';
+}
+
+function generateUsername() {
+  const adj   = ['Wanderer','Seeker','Drifter','Echo','Pulse','Wave','Arc','Void','Glow','Spark'];
+  const pick  = adj[Math.floor(Math.random() * adj.length)];
+  const hex   = Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4,'0');
+  return `${pick}#${hex}`;
+}
+
+/* ── Timer ────────────────────────────────────────────────────── */
+function updateTimer(secsLeft) {
+  const pct     = secsLeft / GAME_DURATION;
+  const offset  = CIRCUMFERENCE * (1 - pct);
+  timerArc.style.strokeDashoffset = offset;
+  timerText.textContent = secsLeft;
+  // Colour: green→yellow→red
+  if (secsLeft > 6)      timerArc.style.stroke = '#4af3ff';
+  else if (secsLeft > 3) timerArc.style.stroke = '#fbbf24';
+  else                   timerArc.style.stroke = '#f87171';
+}
+
+function startTimer() {
+  state.timerSecs = GAME_DURATION;
+  updateTimer(GAME_DURATION);
+  state.timerInterval = setInterval(() => {
+    state.timerSecs--;
+    updateTimer(state.timerSecs);
+    if (state.timerSecs <= 0) finishGame();
+  }, 1000);
+}
+
+function clearTimer() {
+  clearInterval(state.timerInterval);
+  clearTimeout(state.autoFinishTimeout);
+}
+
+/* ── Pad interaction ──────────────────────────────────────────── */
+function padCoordToState(clientX, clientY) {
+  const rect = echoPad.getBoundingClientRect();
+  const x    = Math.max(0, Math.min(1, (clientX - rect.left)  / rect.width));
+  const y    = Math.max(0, Math.min(1, (clientY - rect.top)   / rect.height));
+  state.rhythmNorm = x;
+  state.pitchNorm  = 1 - y;  // top = high pitch
+  trailPoints.push({x, y: 1 - state.pitchNorm});
+  if (trailPoints.length > 40) trailPoints.shift();
+}
+
+function onPadStart(e) {
+  e.preventDefault();
+  if (!state.active) return;
+  const src = e.touches ? e.touches[0] : e;
+  padCoordToState(src.clientX, src.clientY);
+  if (!state.hasInteracted) {
+    state.hasInteracted = true;
+    startTimer();
+    startAudio();
+  } else {
+    updateAudio();
+  }
+}
+
+function onPadMove(e) {
+  e.preventDefault();
+  if (!state.active) return;
+  const src = e.touches ? e.touches[0] : e;
+  padCoordToState(src.clientX, src.clientY);
+  if (state.hasInteracted) updateAudio();
+}
+
+echoPad.addEventListener('mousedown',  onPadStart);
+echoPad.addEventListener('mousemove',  (e) => { if (e.buttons && state.active) onPadMove(e); });
+echoPad.addEventListener('touchstart', onPadStart, { passive: false });
+echoPad.addEventListener('touchmove',  onPadMove,  { passive: false });
+
+/* ── Screen transitions ───────────────────────────────────────── */
+function showScreen(screenEl) {
+  [screenIntro, screenGame, screenResult].forEach(s => s.classList.remove('active'));
+  screenEl.classList.add('active');
+}
+
+/* ── Game flow ────────────────────────────────────────────────── */
+function beginGame() {
+  state.active       = false;
+  state.hasInteracted= false;
+  state.pitchNorm    = 0.5;
+  state.rhythmNorm   = 0.5;
+  trailPoints        = [];
+  clearTimer();
+  stopResultAudio();
+  stopWaveAnim();
+  showScreen(screenGame);
+
+  // Resize canvas to container
+  const cw = echoPad.parentElement.clientWidth;
+  echoPad.width  = Math.max(200, Math.min(460, cw));
+  echoPad.height = Math.round(echoPad.width * 0.565);
+
+  state.active = true;
+  updateTimer(GAME_DURATION);
+  drawPad();
+}
+
+function finishGame() {
+  state.active = false;
+  clearTimer();
+  stopPadAnim();
+  stopAudio(0.5);
+
+  const fp    = getFingerprint(state.pitchNorm, state.rhythmNorm);
+  const uname = generateUsername();
+  const pitchLabel  = getPitchLabel(state.pitchNorm);
+  const rhythmLabel = getRhythmLabel(state.rhythmNorm);
+
+  // Populate result screen
+  document.getElementById('result-fp-label').textContent  = `"${fp.label}"`;
+  document.getElementById('result-sentence').textContent  =
+    `Your emotional fingerprint is ${fp.label}. ${fp.adj.charAt(0).toUpperCase() + fp.adj.slice(1)} energy shapes your unique echo.`;
+  document.getElementById('result-username').textContent  = uname;
+  document.getElementById('result-community').textContent = fp.community;
+  document.getElementById('result-pitch').textContent     = pitchLabel;
+  document.getElementById('result-rhythm').textContent    = rhythmLabel;
+  document.getElementById('result-note-info').innerHTML   =
+    `Playing your echo &mdash; <span>${pitchLabel} pitch · ${rhythmLabel} rhythm</span>`;
+
+  showScreen(screenResult);
+
+  // Store in localStorage
+  const fpData = {
+    fingerprint:  fp.label,
+    community:    fp.community,
+    username:     uname,
+    pitchNorm:    state.pitchNorm,
+    rhythmNorm:   state.rhythmNorm,
+    pitchLabel,
+    rhythmLabel,
+    adjectives:   fp.adj,
+    capturedAt:   new Date().toISOString(),
+  };
+  try { localStorage.setItem('resonance_fingerprint', JSON.stringify(fpData)); } catch(e) {}
+
+  // Play result audio fragment
+  drawResultWave();
+  playResultFragment(state.pitchNorm, state.rhythmNorm, null);
+}
+
+function enterPlatform() {
+  stopResultAudio();
+  stopWaveAnim();
+
+  // Load stored fingerprint for homepage card
+  let fp = null;
+  try { fp = JSON.parse(localStorage.getItem('resonance_fingerprint')); } catch(e) {}
+
+  if (fp) {
+    document.getElementById('home-username').textContent  = fp.username;
+    document.getElementById('home-fp').textContent        = fp.fingerprint;
+    document.getElementById('home-community').textContent = fp.community;
+    document.getElementById('home-pitch').textContent     = fp.pitchLabel;
+    document.getElementById('home-rhythm').textContent    = fp.rhythmLabel;
+    document.getElementById('home-fp-card').style.display = '';
+  }
+
+  modalOverlay.classList.add('fade-out');
+  platformHome.setAttribute('aria-hidden', 'false');
+  platformHome.classList.add('visible');
+
+  setTimeout(() => { modalOverlay.style.display = 'none'; }, 750);
+}
+
+/* ── Button wiring ────────────────────────────────────────────── */
+btnBegin.addEventListener('click', () => {
+  beginGame();
+});
+
+btnFinish.addEventListener('click', () => {
+  if (state.hasInteracted) {
+    finishGame();
+  } else {
+    // If user never interacted, still finish with default center position
+    state.hasInteracted = true;
+    finishGame();
+  }
+});
+
+btnEnter.addEventListener('click', enterPlatform);
+
+btnReplay.addEventListener('click', () => {
+  stopResultAudio();
+  stopWaveAnim();
+  showScreen(screenIntro);
+});
+
+/* ── Responsive canvas resize ─────────────────────────────────── */
+window.addEventListener('resize', () => {
+  if (screenGame.classList.contains('active')) {
+    const cw = echoPad.parentElement.clientWidth;
+    echoPad.width  = Math.max(200, Math.min(460, cw));
+    echoPad.height = Math.round(echoPad.width * 0.565);
+    trailPoints = [];
+  }
+});
+
+/* ── Handle stored fingerprint on return visits ────────────────── */
+(function checkExistingFingerprint() {
+  // Always show the game on load (fresh entry to the site)
+  // (The modal is always shown; users can re-enter the platform via "Enter Resonance")
+})();
+
+</script>
+</body>
+</html>
