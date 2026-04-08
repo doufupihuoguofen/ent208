@@ -2027,6 +2027,9 @@ document.getElementById('btn-share').addEventListener('click', shareToCommunity)
    FEATURE 1 — USER AUTH (localStorage-based session)
    ══════════════════════════════════════════════════════════════════ */
 
+/* WARNING: simpleHash (FNV-1a) is NOT cryptographically secure.
+   This is a client-side demo only — NEVER use this pattern in production.
+   A real app must hash passwords server-side with bcrypt/scrypt/argon2. */
 function simpleHash(str) {
   let h = 0x811c9dc5;
   for (let i = 0; i < str.length; i++) {
@@ -2374,7 +2377,7 @@ function renderForum() {
             '&#9825; ' + likeCount +
           '</button>' +
           '<button class="post-action-btn" data-toggle-comments="' + escapeHtml(post.id) + '">' +
-            '&#9825; ' + comments.length + ' comments' +
+            '&#128172; ' + comments.length + ' comments' +
           '</button>' +
         '</div>' +
       '</div>' +
