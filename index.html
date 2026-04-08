@@ -1514,7 +1514,7 @@ function closeCommunity() {
 }
 
 /* ── Share to Community ────────────────────────────────────────── */
-function shareToCommmunity() {
+function shareToCommunity() {
   if (isAlreadyShared()) return;
   const fp = getUserFingerprint();
   if (!fp) return;
@@ -1572,7 +1572,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-document.getElementById('btn-share').addEventListener('click', shareToCommmunity);
+document.getElementById('btn-share').addEventListener('click', shareToCommunity);
 
 </script>
 </body>
