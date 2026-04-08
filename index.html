@@ -586,6 +586,358 @@
       font-size: 0.9rem;
       line-height: 1.8;
     }
+
+    /* ── Auth Panel ─────────────────────────────────────────────── */
+    .auth-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(4,6,10,0.97);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .auth-panel.visible { opacity: 1; pointer-events: auto; }
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 420px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 0 80px rgba(74,243,255,0.1), 0 0 160px rgba(139,92,246,0.06);
+    }
+    .auth-logo {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      background: linear-gradient(135deg, var(--glow-c), var(--glow-p));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.3rem;
+    }
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.75rem;
+    }
+    .auth-tab {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.75rem 0;
+      cursor: pointer;
+      font-family: inherit;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .auth-form { display: flex; flex-direction: column; gap: 1rem; }
+    .auth-form.hidden { display: none; }
+    .auth-field { display: flex; flex-direction: column; gap: 0.35rem; }
+    .auth-label { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); }
+    .auth-input {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.9rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .auth-input:focus { border-color: var(--accent); }
+    .auth-error {
+      font-size: 0.75rem;
+      color: #f87171;
+      min-height: 1.1em;
+      text-align: center;
+    }
+    .auth-switch {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-top: 0.5rem;
+    }
+    .auth-switch button {
+      background: none; border: none; color: var(--accent);
+      cursor: pointer; font-size: inherit; font-family: inherit;
+      text-decoration: underline;
+    }
+    .auth-close-btn {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: none; border: none; color: var(--text-dim);
+      font-size: 1.2rem; cursor: pointer; line-height: 1;
+    }
+
+    /* ── Nav auth area ──────────────────────────────────────────── */
+    .nav-auth-area {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .nav-user-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(74,243,255,0.08);
+      border: 1px solid rgba(74,243,255,0.2);
+      border-radius: 999px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Forum Panel ────────────────────────────────────────────── */
+    .forum-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 840;
+      background: var(--bg);
+      overflow-y: auto;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      padding: 2rem 1.5rem 4rem;
+    }
+    .forum-panel.visible { opacity: 1; pointer-events: auto; }
+    .forum-inner { max-width: 900px; margin: 0 auto; }
+    .forum-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .forum-title {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #fbbf24, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .forum-subtitle { color: var(--text-dim); font-size: 0.8rem; margin-top: 0.25rem; }
+    .forum-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .btn-new-post {
+      background: linear-gradient(135deg, #fbbf24, #f472b6);
+      color: #070b15;
+      border: none;
+      border-radius: 999px;
+      padding: 0.5rem 1.2rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s;
+    }
+    .btn-new-post:hover { opacity: 0.88; }
+    .forum-feed { display: flex; flex-direction: column; gap: 1.25rem; }
+    .post-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      transition: border-color 0.25s;
+    }
+    .post-card:hover { border-color: rgba(251,191,36,0.22); }
+    .post-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.7rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .post-author {
+      display: flex;
+      flex-direction: column;
+      gap: 0.12rem;
+    }
+    .post-author-name { font-size: 0.8rem; font-weight: 600; color: #fbbf24; }
+    .post-author-fp { font-size: 0.65rem; color: var(--text-dim); }
+    .post-date { font-size: 0.62rem; color: var(--text-dim); }
+    .post-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 0.35rem; }
+    .post-desc { font-size: 0.83rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 1rem; }
+    .post-audio-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.65rem 1rem;
+      margin-bottom: 0.9rem;
+    }
+    .post-play-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fbbf24, #f472b6);
+      border: none;
+      color: #070b15;
+      font-size: 0.8rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+    }
+    .post-play-btn:hover { opacity: 0.85; }
+    .post-waveform { flex: 1; }
+    .post-waveform canvas { width: 100%; height: 32px; display: block; }
+    .post-fp-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .post-fp-chip {
+      background: rgba(251,191,36,0.07);
+      border: 1px solid rgba(251,191,36,0.2);
+      border-radius: 999px;
+      padding: 0.15rem 0.55rem;
+      font-size: 0.62rem;
+      color: #fbbf24;
+      letter-spacing: 0.04em;
+    }
+    .post-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.85rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .post-actions { display: flex; gap: 0.6rem; }
+    .post-action-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-dim);
+      font-size: 0.72rem;
+      padding: 0.3rem 0.85rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .post-action-btn:hover, .post-action-btn.liked { border-color: #f472b6; color: #f472b6; }
+    .post-comments-section {
+      margin-top: 1rem;
+      border-top: 1px solid var(--border);
+      padding-top: 0.9rem;
+      display: none;
+    }
+    .post-comments-section.open { display: block; }
+    .comment-list { display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 0.9rem; }
+    .comment-item {
+      background: rgba(255,255,255,0.025);
+      border-radius: 10px;
+      padding: 0.6rem 0.85rem;
+    }
+    .comment-author { font-size: 0.65rem; color: #fbbf24; font-weight: 600; margin-bottom: 0.2rem; }
+    .comment-text { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; }
+    .comment-input-row { display: flex; gap: 0.5rem; }
+    .comment-input {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.5rem 0.8rem;
+      color: var(--text);
+      font-size: 0.82rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .comment-input:focus { border-color: #fbbf24; }
+    .btn-send-comment {
+      background: linear-gradient(135deg, #fbbf24, #f472b6);
+      border: none;
+      border-radius: 999px;
+      color: #070b15;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    /* ── New Post Modal ─────────────────────────────────────────── */
+    .new-post-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1050;
+      background: rgba(4,6,10,0.96);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .new-post-overlay.visible { opacity: 1; pointer-events: auto; }
+    .new-post-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 480px;
+      padding: 2rem 1.75rem;
+      box-shadow: 0 0 60px rgba(251,191,36,0.08);
+      position: relative;
+    }
+    .new-post-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 1.25rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Visual FX extras ───────────────────────────────────────── */
+    @keyframes eq-bounce {
+      0%, 100% { transform: scaleY(0.3); }
+      50%       { transform: scaleY(1); }
+    }
+    .eq-bars-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 44px;
+      margin: 0.6rem 0;
+      padding: 0 0.25rem;
+    }
+    .eq-bar {
+      flex: 1;
+      border-radius: 2px 2px 0 0;
+      animation: eq-bounce var(--dur, 0.6s) ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+      transform-origin: bottom;
+    }
   </style>
 </head>
 <body>
@@ -622,9 +974,13 @@
   <nav class="home-nav">
     <a href="#" class="nav-item" id="nav-explore">Explore</a>
     <a href="#" class="nav-item" id="nav-communities">Communities</a>
+    <a href="#" class="nav-item" id="nav-forum">Forum</a>
     <a href="#" class="nav-item" id="nav-myecho">My Echo</a>
     <a href="#" class="nav-item">About</a>
   </nav>
+  <div class="nav-auth-area" id="nav-auth-area">
+    <!-- filled by JS -->
+  </div>
 </main>
 
 <!-- ═══════════ Game Modal ══════════════════════════════════════ -->
@@ -723,6 +1079,7 @@
       <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" id="btn-enter">Enter Resonance ›</button>
         <button class="btn btn-outline btn-sm" id="btn-share">&#8853; Share Echo</button>
+        <button class="btn btn-ghost btn-sm" id="btn-publish-forum" style="background:linear-gradient(135deg,#fbbf24,#f472b6);color:#070b15;border:none;">&#9834; Publish to Forum</button>
         <button class="btn btn-ghost btn-sm" id="btn-replay">Try Again</button>
       </div>
     </div>
@@ -745,6 +1102,93 @@
       <button class="tab-btn" data-tab="mine">My Community</button>
     </div>
     <div id="community-grid" class="community-grid"></div>
+  </div>
+</div>
+
+<!-- ═══════════ Forum Panel ═════════════════════════════════════ -->
+<div id="forum-panel" class="forum-panel" aria-hidden="true">
+  <div class="forum-inner">
+    <div class="forum-header">
+      <div>
+        <h2 class="forum-title">Sound Feed</h2>
+        <p class="forum-subtitle">Music posts &amp; emotional echoes from the community</p>
+      </div>
+      <div class="forum-actions">
+        <button class="btn-new-post" id="btn-open-new-post">&#9834; New Post</button>
+        <button class="btn btn-ghost btn-sm" id="btn-close-forum">&#x2715; Close</button>
+      </div>
+    </div>
+    <div id="forum-feed" class="forum-feed"></div>
+  </div>
+</div>
+
+<!-- ═══════════ New Post Overlay ════════════════════════════════ -->
+<div id="new-post-overlay" class="new-post-overlay" aria-hidden="true">
+  <div class="new-post-box">
+    <div class="new-post-title">&#9834; Share Your Sound</div>
+    <button class="auth-close-btn" id="btn-close-new-post">&#x2715;</button>
+    <div class="auth-form" id="new-post-form">
+      <div class="auth-field">
+        <label class="auth-label" for="np-title">Post Title</label>
+        <input class="auth-input" id="np-title" placeholder="Give your echo a name…" maxlength="60" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="np-desc">Description</label>
+        <textarea class="auth-input" id="np-desc" rows="3" placeholder="Describe what you felt…" maxlength="240" style="resize:vertical"></textarea>
+      </div>
+      <p style="font-size:0.72rem;color:var(--text-dim);line-height:1.6">
+        Your current echo (<span id="np-fp-preview" style="color:var(--accent)">—</span>) will be attached as the audio fingerprint.
+      </p>
+      <div class="auth-error" id="new-post-error"></div>
+      <button class="btn-new-post" id="btn-submit-post" style="width:100%;padding:0.65rem">Publish Post ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ Auth Panel ═══════════════════════════════════════ -->
+<div id="auth-panel" class="auth-panel" aria-hidden="true">
+  <div class="auth-box" style="position:relative">
+    <button class="auth-close-btn" id="btn-close-auth">&#x2715;</button>
+    <div class="auth-logo">Resonance · EchoPlay</div>
+    <p style="text-align:center;color:var(--text-dim);font-size:0.72rem;margin-bottom:1.25rem;letter-spacing:0.06em">Join the community</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-auth-tab="login" id="auth-tab-login">Login</button>
+      <button class="auth-tab" data-auth-tab="signup" id="auth-tab-signup">Sign Up</button>
+    </div>
+    <!-- Login form -->
+    <form class="auth-form" id="auth-login-form" onsubmit="return false">
+      <div class="auth-field">
+        <label class="auth-label" for="login-username">Username</label>
+        <input class="auth-input" id="login-username" type="text" autocomplete="username" placeholder="YourUsername" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="login-password">Password</label>
+        <input class="auth-input" id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <div class="auth-error" id="login-error"></div>
+      <button class="btn btn-primary" style="width:100%" id="btn-do-login">Login ›</button>
+    </form>
+    <!-- Sign up form -->
+    <form class="auth-form hidden" id="auth-signup-form" onsubmit="return false">
+      <div class="auth-field">
+        <label class="auth-label" for="su-username">Username</label>
+        <input class="auth-input" id="su-username" type="text" autocomplete="username" placeholder="Choose a username" maxlength="24" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="su-email">Email</label>
+        <input class="auth-input" id="su-email" type="email" autocomplete="email" placeholder="you@example.com" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="su-password">Password</label>
+        <input class="auth-input" id="su-password" type="password" autocomplete="new-password" placeholder="Min 6 characters" />
+      </div>
+      <div class="auth-error" id="signup-error"></div>
+      <button class="btn btn-primary" style="width:100%" id="btn-do-signup">Create Account ›</button>
+    </form>
+    <p class="auth-switch">
+      <span id="auth-switch-text">Don't have an account?</span>
+      <button id="auth-switch-btn"> Sign up</button>
+    </p>
   </div>
 </div>
 
@@ -1562,6 +2006,11 @@ document.getElementById('nav-myecho').addEventListener('click', e => {
   showScreen(screenIntro);
 });
 
+document.getElementById('nav-forum').addEventListener('click', e => {
+  e.preventDefault();
+  openForum();
+});
+
 document.getElementById('btn-close-community').addEventListener('click', closeCommunity);
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1574,6 +2023,709 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 document.getElementById('btn-share').addEventListener('click', shareToCommunity);
 
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 1 — USER AUTH (localStorage-based session)
+   ══════════════════════════════════════════════════════════════════ */
+
+function simpleHash(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = (h * 0x01000193) >>> 0;
+  }
+  return h.toString(16);
+}
+
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem('resonance_users') || '[]'); } catch(e) { return []; }
+}
+
+function saveUsers(users) {
+  try { localStorage.setItem('resonance_users', JSON.stringify(users)); } catch(e) {}
+}
+
+function getCurrentUser() {
+  try { return JSON.parse(localStorage.getItem('resonance_session') || 'null'); } catch(e) { return null; }
+}
+
+function setCurrentUser(user) {
+  try { localStorage.setItem('resonance_session', JSON.stringify(user)); } catch(e) {}
+}
+
+function logout() {
+  try { localStorage.removeItem('resonance_session'); } catch(e) {}
+  updateNavAuth();
+}
+
+function signUp(username, email, password) {
+  username = username.trim();
+  email    = email.trim().toLowerCase();
+  if (!username || username.length < 2) return 'Username must be at least 2 characters.';
+  if (!/\S+@\S+\.\S+/.test(email)) return 'Please enter a valid email.';
+  if (password.length < 6) return 'Password must be at least 6 characters.';
+  const users = getUsers();
+  if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) return 'Username already taken.';
+  if (users.some(u => u.email === email)) return 'Email already registered.';
+  const user = { id: Date.now().toString(36), username, email, passwordHash: simpleHash(password), createdAt: new Date().toISOString() };
+  users.push(user);
+  saveUsers(users);
+  setCurrentUser({ id: user.id, username: user.username, email: user.email, createdAt: user.createdAt });
+  return null;
+}
+
+function login(username, password) {
+  const users = getUsers();
+  const user  = users.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
+  if (!user) return 'User not found.';
+  if (user.passwordHash !== simpleHash(password)) return 'Incorrect password.';
+  setCurrentUser({ id: user.id, username: user.username, email: user.email, createdAt: user.createdAt });
+  return null;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function updateNavAuth() {
+  const area = document.getElementById('nav-auth-area');
+  const user = getCurrentUser();
+  if (user) {
+    area.innerHTML =
+      '<span class="nav-user-chip">&#9675; ' + escapeHtml(user.username) + '</span>' +
+      '<button class="btn btn-ghost btn-sm" id="btn-do-logout" style="font-size:0.7rem">Logout</button>';
+    document.getElementById('btn-do-logout').addEventListener('click', logout);
+  } else {
+    area.innerHTML = '<button class="btn btn-outline btn-sm" id="btn-open-auth" style="font-size:0.75rem">&#9675; Login / Sign Up</button>';
+    document.getElementById('btn-open-auth').addEventListener('click', () => openAuth());
+  }
+}
+
+function openAuth(defaultTab) {
+  const panel = document.getElementById('auth-panel');
+  panel.classList.add('visible');
+  panel.removeAttribute('aria-hidden');
+  if (defaultTab === 'signup') switchAuthTab('signup');
+  else switchAuthTab('login');
+  document.getElementById('login-error').textContent  = '';
+  document.getElementById('signup-error').textContent = '';
+}
+
+function closeAuth() {
+  const panel = document.getElementById('auth-panel');
+  panel.classList.remove('visible');
+  panel.setAttribute('aria-hidden', 'true');
+}
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.authTab === tab));
+  document.getElementById('auth-login-form').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('auth-signup-form').classList.toggle('hidden', tab !== 'signup');
+  document.getElementById('auth-switch-text').textContent = tab === 'login' ? "Don't have an account?" : 'Already have an account?';
+  document.getElementById('auth-switch-btn').textContent  = tab === 'login' ? ' Sign up' : ' Login';
+}
+
+document.getElementById('btn-close-auth').addEventListener('click', closeAuth);
+document.querySelectorAll('.auth-tab').forEach(btn => btn.addEventListener('click', () => switchAuthTab(btn.dataset.authTab)));
+document.getElementById('auth-switch-btn').addEventListener('click', () => {
+  const loginActive = !document.getElementById('auth-login-form').classList.contains('hidden');
+  switchAuthTab(loginActive ? 'signup' : 'login');
+});
+
+document.getElementById('btn-do-login').addEventListener('click', () => {
+  const uname = document.getElementById('login-username').value;
+  const pwd   = document.getElementById('login-password').value;
+  const err   = login(uname, pwd);
+  if (err) { document.getElementById('login-error').textContent = err; }
+  else { closeAuth(); updateNavAuth(); }
+});
+
+document.getElementById('btn-do-signup').addEventListener('click', () => {
+  const uname = document.getElementById('su-username').value;
+  const email = document.getElementById('su-email').value;
+  const pwd   = document.getElementById('su-password').value;
+  const err   = signUp(uname, email, pwd);
+  if (err) { document.getElementById('signup-error').textContent = err; }
+  else { closeAuth(); updateNavAuth(); }
+});
+
+updateNavAuth();
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 2 — FORUM (Music Feed + Comments)
+   ══════════════════════════════════════════════════════════════════ */
+
+const MOCK_POSTS = [
+  {
+    id: 'mock-1', title: 'Late Night Signals', isMock: true,
+    description: 'I made this at 2am. The low pitch felt like the city breathing beneath me.',
+    username: 'Drifter#2C9E', fingerprint: 'Silent Root', community: 'The Quiet Trail',
+    pitchNorm: 0.12, rhythmNorm: 0.18, pitchLabel: 'Very Low', rhythmLabel: 'Very Sparse',
+    createdAt: '2026-04-07T02:11:00Z', likes: 14,
+    comments: [
+      { username: 'Wave#B471', text: 'This one hits different late at night. So calm.', createdAt: '2026-04-07T08:33:00Z' },
+      { username: 'Arc#0D5F',  text: 'Pure introspection. Love it.', createdAt: '2026-04-07T09:14:00Z' },
+    ],
+  },
+  {
+    id: 'mock-2', title: 'Storm Before Dawn', isMock: true,
+    description: 'Maximum energy. I was running on adrenaline when I built this.',
+    username: 'Spark#FF3A', fingerprint: 'Radiant Storm', community: 'The High Energy Arena',
+    pitchNorm: 0.88, rhythmNorm: 0.82, pitchLabel: 'Very High', rhythmLabel: 'Very Dense',
+    createdAt: '2026-04-06T18:45:00Z', likes: 31,
+    comments: [
+      { username: 'Pulse#4D88', text: 'Electric energy!! Played on repeat.', createdAt: '2026-04-06T19:02:00Z' },
+    ],
+  },
+  {
+    id: 'mock-3', title: 'River Drift', isMock: true,
+    description: 'Mid-range, flowing — like water finding its path. No destination needed.',
+    username: 'Wave#B471', fingerprint: 'Flowing Current', community: 'The Rhythm Collective',
+    pitchNorm: 0.55, rhythmNorm: 0.69, pitchLabel: 'High', rhythmLabel: 'Dense',
+    createdAt: '2026-04-06T11:30:00Z', likes: 22,
+    comments: [
+      { username: 'Echo#7A3C', text: 'The rhythm on this is perfect.', createdAt: '2026-04-06T12:05:00Z' },
+      { username: 'Glow#E1B2', text: 'Feels like a summer afternoon.', createdAt: '2026-04-06T14:17:00Z' },
+    ],
+  },
+  {
+    id: 'mock-4', title: 'Sky Archipelago', isMock: true,
+    description: 'Bright and sparse — an open sky with islands of sound.',
+    username: 'Arc#0D5F', fingerprint: 'Crystal Horizon', community: 'The Open Sky',
+    pitchNorm: 0.77, rhythmNorm: 0.24, pitchLabel: 'Very High', rhythmLabel: 'Very Sparse',
+    createdAt: '2026-04-05T20:00:00Z', likes: 18,
+    comments: [],
+  },
+  {
+    id: 'mock-5', title: 'Deep Water Memory', isMock: true,
+    description: 'Dark and rhythmic. Feels like pressure building, then releasing.',
+    username: 'Glow#E1B2', fingerprint: 'Deep Tide', community: 'The Deep Current',
+    pitchNorm: 0.18, rhythmNorm: 0.72, pitchLabel: 'Very Low', rhythmLabel: 'Dense',
+    createdAt: '2026-04-05T09:22:00Z', likes: 27,
+    comments: [
+      { username: 'Void#C23A', text: 'This is haunting. In the best way.', createdAt: '2026-04-05T11:40:00Z' },
+    ],
+  },
+  {
+    id: 'mock-6', title: 'Balance Point', isMock: true,
+    description: 'Centred, grounded. Made this during meditation.',
+    username: 'Echo#7A3C', fingerprint: 'Still Waters', community: 'The Balanced Path',
+    pitchNorm: 0.44, rhythmNorm: 0.41, pitchLabel: 'Low', rhythmLabel: 'Sparse',
+    createdAt: '2026-04-04T16:08:00Z', likes: 9,
+    comments: [
+      { username: 'Seeker#9F61', text: 'This one grounds me.', createdAt: '2026-04-04T17:00:00Z' },
+    ],
+  },
+  {
+    id: 'mock-7', title: 'Cascade Protocol', isMock: true,
+    description: 'Dense rhythms layered into something that moves. Cannot stop playing this.',
+    username: 'Pulse#4D88', fingerprint: 'Radiant Storm', community: 'The High Energy Arena',
+    pitchNorm: 0.92, rhythmNorm: 0.88, pitchLabel: 'Very High', rhythmLabel: 'Very Dense',
+    createdAt: '2026-04-03T22:55:00Z', likes: 45,
+    comments: [
+      { username: 'Spark#FF3A', text: 'Absolute fire', createdAt: '2026-04-03T23:10:00Z' },
+      { username: 'Wave#B471',  text: 'The density on this is insane.', createdAt: '2026-04-04T00:02:00Z' },
+    ],
+  },
+  {
+    id: 'mock-8', title: 'Whispering Depth', isMock: true,
+    description: 'Very quiet, very slow. Like breath in an empty room.',
+    username: 'Void#C23A', fingerprint: 'Silent Root', community: 'The Quiet Trail',
+    pitchNorm: 0.06, rhythmNorm: 0.14, pitchLabel: 'Very Low', rhythmLabel: 'Very Sparse',
+    createdAt: '2026-04-03T07:45:00Z', likes: 11,
+    comments: [],
+  },
+];
+
+function getForumPosts() {
+  const real = [];
+  try { real.push(...JSON.parse(localStorage.getItem('resonance_posts') || '[]')); } catch(e) {}
+  return [...real, ...MOCK_POSTS];
+}
+
+function getLikes() {
+  try { return JSON.parse(localStorage.getItem('resonance_likes') || '{}'); } catch(e) { return {}; }
+}
+function saveLikes(obj) {
+  try { localStorage.setItem('resonance_likes', JSON.stringify(obj)); } catch(e) {}
+}
+function getPostComments(postId) {
+  try { return JSON.parse(localStorage.getItem('resonance_comments_' + postId) || 'null'); } catch(e) { return null; }
+}
+function savePostComments(postId, comments) {
+  try { localStorage.setItem('resonance_comments_' + postId, JSON.stringify(comments)); } catch(e) {}
+}
+
+let forumPlayingId = null;
+let forumWaveAnimId = null;
+
+function drawStaticWaveform(canvas, pitchNorm, rhythmNorm) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const freq = rhythmNorm * 6 + 1;
+  const amp  = pitchNorm * (H * 0.38) + H * 0.08;
+  ctx.beginPath();
+  for (let x = 0; x <= W; x++) {
+    const t = x / W;
+    const y = H / 2 + amp * Math.sin(t * Math.PI * 2 * freq) * Math.exp(-t * 0.8) * Math.sin(t * Math.PI);
+    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, '#fbbf24');
+  grad.addColorStop(0.5, '#f472b6');
+  grad.addColorStop(1, '#8b5cf6');
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 1.8;
+  ctx.shadowColor = '#fbbf24';
+  ctx.shadowBlur = 4;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function startForumWaveAnim(pid) {
+  if (forumWaveAnimId) cancelAnimationFrame(forumWaveAnimId);
+  function tick() {
+    const canvas = document.getElementById('fw-' + pid);
+    if (!canvas || forumPlayingId !== pid) { forumWaveAnimId = null; return; }
+    if (analyser) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteTimeDomainData(data);
+      ctx.beginPath();
+      const sw = W / data.length;
+      for (let i = 0; i < data.length; i++) {
+        const v = data[i] / 128;
+        const y = (v * H) / 2;
+        if (i === 0) ctx.moveTo(0, y); else ctx.lineTo(i * sw, y);
+      }
+      const grad = ctx.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0, '#fbbf24'); grad.addColorStop(0.5, '#f472b6'); grad.addColorStop(1, '#8b5cf6');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.8;
+      ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 4;
+      ctx.stroke(); ctx.shadowBlur = 0;
+    }
+    forumWaveAnimId = requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function renderForum() {
+  const feed  = document.getElementById('forum-feed');
+  const posts = getForumPosts();
+  const likes = getLikes();
+  const user  = getCurrentUser();
+
+  if (posts.length === 0) {
+    feed.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:3rem;line-height:1.8">No posts yet. Be the first to share!</div>';
+    return;
+  }
+
+  feed.innerHTML = posts.map(post => {
+    const savedComments = getPostComments(post.id);
+    const comments  = savedComments !== null ? savedComments : post.comments;
+    const likeCount = likes[post.id] !== undefined ? likes[post.id] : post.likes;
+    const hasLiked  = user ? likes['liked_' + post.id + '_' + user.id] : false;
+    const isPlaying = forumPlayingId === post.id;
+
+    const commentsHtml = comments.map(c =>
+      '<div class="comment-item">' +
+        '<div class="comment-author">' + escapeHtml(c.username) + '</div>' +
+        '<div class="comment-text">' + escapeHtml(c.text) + '</div>' +
+      '</div>'
+    ).join('');
+
+    const commentInputHtml = user
+      ? '<div class="comment-input-row">' +
+          '<input class="comment-input" placeholder="Add a comment..." data-post-id="' + escapeHtml(post.id) + '" maxlength="200" />' +
+          '<button class="btn-send-comment" data-post-id="' + escapeHtml(post.id) + '">Send</button>' +
+        '</div>'
+      : '<p style="font-size:0.75rem;color:var(--text-dim)">Login to add comments.</p>';
+
+    return '<div class="post-card" data-post-id="' + escapeHtml(post.id) + '">' +
+      '<div class="post-card-header">' +
+        '<div class="post-author">' +
+          '<div class="post-author-name">' + escapeHtml(post.username) + '</div>' +
+          '<div class="post-author-fp">' + escapeHtml(post.fingerprint) + ' \u00b7 ' + escapeHtml(post.community) + '</div>' +
+        '</div>' +
+        '<div class="post-date">' + formatEntryDate(post.createdAt) + '</div>' +
+      '</div>' +
+      '<div class="post-title">' + escapeHtml(post.title) + '</div>' +
+      '<div class="post-desc">' + escapeHtml(post.description) + '</div>' +
+      '<div class="post-audio-bar">' +
+        '<button class="post-play-btn" data-post-id="' + escapeHtml(post.id) + '" aria-label="' + (isPlaying ? 'Stop' : 'Play') + '">' +
+          (isPlaying ? '&#9632;' : '&#9654;') +
+        '</button>' +
+        '<div class="post-waveform"><canvas id="fw-' + escapeHtml(post.id) + '" height="32"></canvas></div>' +
+      '</div>' +
+      '<div class="post-fp-chips">' +
+        '<span class="post-fp-chip">Pitch: ' + escapeHtml(post.pitchLabel) + '</span>' +
+        '<span class="post-fp-chip">Rhythm: ' + escapeHtml(post.rhythmLabel) + '</span>' +
+      '</div>' +
+      '<div class="post-footer">' +
+        '<div class="post-actions">' +
+          '<button class="post-action-btn' + (hasLiked ? ' liked' : '') + '" data-like-id="' + escapeHtml(post.id) + '">' +
+            '&#9825; ' + likeCount +
+          '</button>' +
+          '<button class="post-action-btn" data-toggle-comments="' + escapeHtml(post.id) + '">' +
+            '&#9825; ' + comments.length + ' comments' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="post-comments-section" id="comments-' + escapeHtml(post.id) + '">' +
+        '<div class="comment-list">' + commentsHtml + '</div>' +
+        commentInputHtml +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // Wire play buttons
+  feed.querySelectorAll('.post-play-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pid = btn.dataset.postId;
+      const post = posts.find(p => p.id === pid);
+      if (!post) return;
+      if (forumPlayingId === pid) {
+        stopResultAudio();
+        forumPlayingId = null;
+        renderForum();
+      } else {
+        stopResultAudio();
+        forumPlayingId = pid;
+        renderForum();
+        if (!audioCtx) initAudio();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        playResultFragment(post.pitchNorm, post.rhythmNorm, () => {
+          forumPlayingId = null;
+          renderForum();
+        });
+        startForumWaveAnim(pid);
+      }
+    });
+  });
+
+  // Wire like buttons
+  feed.querySelectorAll('[data-like-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!getCurrentUser()) { openAuth(); return; }
+      const pid  = btn.dataset.likeId;
+      const post = posts.find(p => p.id === pid);
+      const lk   = getLikes();
+      const key  = 'liked_' + pid + '_' + getCurrentUser().id;
+      if (lk[key]) return;
+      lk[key] = true;
+      lk[pid] = (lk[pid] !== undefined ? lk[pid] : post.likes) + 1;
+      saveLikes(lk);
+      btn.classList.add('liked');
+      btn.innerHTML = '&#9825; ' + lk[pid];
+    });
+  });
+
+  // Wire comment toggles
+  feed.querySelectorAll('[data-toggle-comments]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sec = document.getElementById('comments-' + btn.dataset.toggleComments);
+      if (sec) sec.classList.toggle('open');
+    });
+  });
+
+  // Wire send comment
+  feed.querySelectorAll('.btn-send-comment').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pid   = btn.dataset.postId;
+      const input = feed.querySelector('.comment-input[data-post-id="' + CSS.escape(pid) + '"]');
+      const cu    = getCurrentUser();
+      if (!cu || !input) return;
+      const text = input.value.trim();
+      if (!text) return;
+      const post = posts.find(p => p.id === pid);
+      const existing = getPostComments(pid) !== null ? getPostComments(pid) : (post ? post.comments : []);
+      savePostComments(pid, [...existing, { username: cu.username, text, createdAt: new Date().toISOString() }]);
+      input.value = '';
+      renderForum();
+      const sec = document.getElementById('comments-' + pid);
+      if (sec) sec.classList.add('open');
+    });
+  });
+
+  // Draw static waveforms
+  posts.forEach(post => {
+    const canvas = document.getElementById('fw-' + post.id);
+    if (!canvas) return;
+    canvas.width = canvas.parentElement ? (canvas.parentElement.clientWidth || 200) : 200;
+    if (forumPlayingId !== post.id) drawStaticWaveform(canvas, post.pitchNorm, post.rhythmNorm);
+  });
+}
+
+function openForum() {
+  renderForum();
+  const panel = document.getElementById('forum-panel');
+  panel.classList.add('visible');
+  panel.removeAttribute('aria-hidden');
+}
+
+function closeForum() {
+  stopResultAudio();
+  forumPlayingId = null;
+  const panel = document.getElementById('forum-panel');
+  panel.classList.remove('visible');
+  panel.setAttribute('aria-hidden', 'true');
+}
+
+document.getElementById('btn-close-forum').addEventListener('click', closeForum);
+
+document.getElementById('btn-open-new-post').addEventListener('click', () => {
+  if (!getCurrentUser()) { openAuth(); return; }
+  openNewPostModal();
+});
+
+function openNewPostModal() {
+  const fp = getUserFingerprint();
+  document.getElementById('np-fp-preview').textContent = fp ? fp.fingerprint : 'none captured';
+  document.getElementById('np-title').value  = '';
+  document.getElementById('np-desc').value   = '';
+  document.getElementById('new-post-error').textContent = '';
+  const ov = document.getElementById('new-post-overlay');
+  ov.classList.add('visible');
+  ov.removeAttribute('aria-hidden');
+}
+
+function closeNewPostModal() {
+  const ov = document.getElementById('new-post-overlay');
+  ov.classList.remove('visible');
+  ov.setAttribute('aria-hidden', 'true');
+}
+
+document.getElementById('btn-close-new-post').addEventListener('click', closeNewPostModal);
+
+document.getElementById('btn-submit-post').addEventListener('click', () => {
+  const user = getCurrentUser();
+  if (!user) { closeNewPostModal(); openAuth(); return; }
+  const title = document.getElementById('np-title').value.trim();
+  const desc  = document.getElementById('np-desc').value.trim();
+  if (!title) { document.getElementById('new-post-error').textContent = 'Please enter a title.'; return; }
+  if (!desc)  { document.getElementById('new-post-error').textContent = 'Please add a description.'; return; }
+  const fp    = getUserFingerprint();
+  const fpObj = fp ? getFingerprint(fp.pitchNorm, fp.rhythmNorm) : FINGERPRINTS[3];
+  const post  = {
+    id: Date.now().toString(36),
+    title, description: desc,
+    username:    user.username,
+    fingerprint: fp ? fp.fingerprint  : 'Still Waters',
+    community:   fpObj.community,
+    pitchNorm:   fp ? fp.pitchNorm    : 0.5,
+    rhythmNorm:  fp ? fp.rhythmNorm   : 0.5,
+    pitchLabel:  fp ? fp.pitchLabel   : 'Low',
+    rhythmLabel: fp ? fp.rhythmLabel  : 'Sparse',
+    createdAt: new Date().toISOString(),
+    likes: 0,
+    comments: [],
+  };
+  const real = [];
+  try { real.push(...JSON.parse(localStorage.getItem('resonance_posts') || '[]')); } catch(e) {}
+  real.unshift(post);
+  try { localStorage.setItem('resonance_posts', JSON.stringify(real)); } catch(e) {}
+  closeNewPostModal();
+  openForum();
+});
+
+document.getElementById('btn-publish-forum').addEventListener('click', () => {
+  if (!getCurrentUser()) { openAuth(); return; }
+  openNewPostModal();
+});
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 3 — ENHANCED VISUAL EFFECTS
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Returns 0..1 average amplitude from current analyser */
+function getAmplitude() {
+  if (!analyser) return 0;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  let sum = 0;
+  for (let i = 0; i < data.length; i++) sum += data[i];
+  return sum / (data.length * 255);
+}
+
+/* ── Replace drawPad with an enhanced version ─────────────────── */
+(function patchDrawPad() {
+  if (padAnimId) { cancelAnimationFrame(padAnimId); padAnimId = null; }
+  drawPad = function drawPadEnhanced() {
+    const W = echoPad.width, H = echoPad.height;
+    padCtx.clearRect(0, 0, W, H);
+
+    const bg = padCtx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, 'rgba(13,21,36,0.9)');
+    bg.addColorStop(1, 'rgba(7,9,15,0.9)');
+    padCtx.fillStyle = bg;
+    padCtx.beginPath();
+    if (padCtx.roundRect) {
+      padCtx.roundRect(0, 0, W, H, 14);
+    } else {
+      const r = 14;
+      padCtx.moveTo(r, 0);
+      padCtx.lineTo(W - r, 0); padCtx.arcTo(W, 0, W, r, r);
+      padCtx.lineTo(W, H - r); padCtx.arcTo(W, H, W - r, H, r);
+      padCtx.lineTo(r, H);     padCtx.arcTo(0, H, 0, H - r, r);
+      padCtx.lineTo(0, r);     padCtx.arcTo(0, 0, r, 0, r);
+      padCtx.closePath();
+    }
+    padCtx.fill();
+
+    const amp = getAmplitude();
+    if (amp > 0.02) {
+      const cx2 = state.rhythmNorm * W, cy2 = (1 - state.pitchNorm) * H;
+      const bgGlow = padCtx.createRadialGradient(cx2, cy2, 0, cx2, cy2, W * (0.5 + amp));
+      bgGlow.addColorStop(0,   'rgba(74,243,255,' + (amp * 0.13).toFixed(3) + ')');
+      bgGlow.addColorStop(0.5, 'rgba(139,92,246,' + (amp * 0.07).toFixed(3) + ')');
+      bgGlow.addColorStop(1,   'rgba(0,0,0,0)');
+      padCtx.fillStyle = bgGlow;
+      padCtx.fillRect(0, 0, W, H);
+    }
+
+    padCtx.strokeStyle = 'rgba(74,243,255,0.07)';
+    padCtx.lineWidth   = 1;
+    for (let i = 1; i < 4; i++) {
+      padCtx.beginPath(); padCtx.moveTo(W * i / 4, 0); padCtx.lineTo(W * i / 4, H); padCtx.stroke();
+      padCtx.beginPath(); padCtx.moveTo(0, H * i / 4); padCtx.lineTo(W, H * i / 4); padCtx.stroke();
+    }
+
+    const now = Date.now() * 0.001;
+    const boost = 1 + amp * 4;
+    PAD_PARTICLES.forEach(p => {
+      p.x += p.vx * boost; p.y += p.vy * boost;
+      if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+      if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
+      const alpha = 0.2 + 0.1 * Math.sin(now + p.a * 6) + amp * 0.35;
+      padCtx.beginPath();
+      padCtx.arc(p.x * W, p.y * H, p.r * (1 + amp * 2.5), 0, Math.PI * 2);
+      padCtx.fillStyle = 'rgba(74,243,255,' + Math.min(alpha, 0.9).toFixed(3) + ')';
+      padCtx.fill();
+    });
+
+    if (trailPoints.length > 1) {
+      padCtx.beginPath();
+      padCtx.moveTo(trailPoints[0].x * W, trailPoints[0].y * H);
+      for (let i = 1; i < trailPoints.length; i++) padCtx.lineTo(trailPoints[i].x * W, trailPoints[i].y * H);
+      padCtx.strokeStyle = 'rgba(74,243,255,' + (0.25 + amp * 0.4).toFixed(3) + ')';
+      padCtx.lineWidth   = 2 + amp * 3;
+      padCtx.lineJoin = 'round'; padCtx.lineCap = 'round';
+      padCtx.stroke();
+    }
+
+    const cx   = state.rhythmNorm * W;
+    const cy   = (1 - state.pitchNorm) * H;
+    const hr   = 55 + amp * 60;
+    const halo = padCtx.createRadialGradient(cx, cy, 0, cx, cy, hr);
+    halo.addColorStop(0,   'rgba(74,243,255,' + (0.18 + amp * 0.25).toFixed(3) + ')');
+    halo.addColorStop(0.4, 'rgba(139,92,246,' + (0.08 + amp * 0.1).toFixed(3) + ')');
+    halo.addColorStop(1,   'rgba(0,0,0,0)');
+    padCtx.beginPath();
+    padCtx.arc(cx, cy, hr, 0, Math.PI * 2);
+    padCtx.fillStyle = halo;
+    padCtx.fill();
+
+    const pulse = 0.7 + 0.3 * Math.sin(now * 4);
+    padCtx.beginPath();
+    padCtx.arc(cx, cy, 8 + amp * 5, 0, Math.PI * 2);
+    padCtx.fillStyle = 'rgba(74,243,255,' + pulse.toFixed(3) + ')';
+    padCtx.shadowColor = '#4af3ff';
+    padCtx.shadowBlur  = 14 + amp * 20;
+    padCtx.fill();
+    padCtx.shadowBlur = 0;
+
+    padCtx.strokeStyle = 'rgba(74,243,255,' + (0.15 + amp * 0.2).toFixed(3) + ')';
+    padCtx.lineWidth   = 1;
+    padCtx.setLineDash([4, 6]);
+    padCtx.beginPath(); padCtx.moveTo(cx, 0); padCtx.lineTo(cx, H); padCtx.stroke();
+    padCtx.beginPath(); padCtx.moveTo(0, cy); padCtx.lineTo(W, cy);  padCtx.stroke();
+    padCtx.setLineDash([]);
+
+    /* Frequency bar strip (bottom ~16% of pad, shown when audio active) */
+    if (analyser && state.hasInteracted) {
+      const barData = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(barData);
+      const barCount = 32;
+      const barW     = W / barCount - 1;
+      const stripH   = H * 0.16;
+      const stripY   = H - stripH;
+      padCtx.fillStyle = 'rgba(7,9,15,0.55)';
+      padCtx.fillRect(0, stripY, W, stripH);
+      for (let i = 0; i < barCount; i++) {
+        const idx = Math.floor(i * barData.length / barCount);
+        const v   = barData[idx] / 255;
+        const bH  = v * stripH * 0.95;
+        const t   = i / barCount;
+        const r   = Math.round(74  + (139 - 74)  * t);
+        const g   = Math.round(243 + (92  - 243) * t);
+        const b   = Math.round(255);
+        padCtx.fillStyle   = 'rgb(' + r + ',' + g + ',' + b + ')';
+        padCtx.shadowColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+        padCtx.shadowBlur  = 4;
+        padCtx.fillRect(i * (barW + 1), stripY + (stripH - bH), barW, bH);
+      }
+      padCtx.shadowBlur = 0;
+    }
+
+    padAnimId = requestAnimationFrame(drawPad);
+  };
+})();
+
+/* ── Replace drawResultWave with colourful EQ bars + waveform ─── */
+(function patchDrawResultWave() {
+  drawResultWave = function drawResultWaveEnhanced() {
+    const W = resultWave.width, H = resultWave.height;
+    waveCtx.clearRect(0, 0, W, H);
+
+    if (!analyser) {
+      waveAnimId = requestAnimationFrame(drawResultWave);
+      return;
+    }
+
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(freqData);
+    const barCount = 48;
+    const barW     = W / barCount - 1;
+    const halfH    = H / 2;
+    for (let i = 0; i < barCount; i++) {
+      const idx   = Math.floor(i * freqData.length / barCount);
+      const v     = freqData[idx] / 255;
+      const bH    = v * halfH * 0.95;
+      const t     = i / barCount;
+      const r     = Math.round(74  + (248 - 74)  * t);
+      const g     = Math.round(243 + (113 - 243) * t);
+      const b     = Math.round(255 + (133 - 255) * t);
+      const alpha = 0.55 + v * 0.45;
+      waveCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha.toFixed(3) + ')';
+      waveCtx.fillRect(i * (barW + 1), H - bH, barW, bH);
+    }
+
+    const timeData = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteTimeDomainData(timeData);
+    waveCtx.beginPath();
+    const sliceW = W / timeData.length;
+    for (let i = 0; i < timeData.length; i++) {
+      const v = timeData[i] / 128;
+      const y = (v * halfH) / 2;
+      if (i === 0) waveCtx.moveTo(0, y); else waveCtx.lineTo(i * sliceW, y);
+    }
+    waveCtx.strokeStyle = '#4af3ff';
+    waveCtx.lineWidth   = 2;
+    waveCtx.shadowColor = '#4af3ff';
+    waveCtx.shadowBlur  = 8;
+    waveCtx.stroke();
+    waveCtx.shadowBlur  = 0;
+
+    waveAnimId = requestAnimationFrame(drawResultWave);
+  };
+})();
 </script>
 </body>
 </html>
