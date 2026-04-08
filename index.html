@@ -411,6 +411,181 @@
       animation: breathe 3s ease-in-out infinite;
     }
     .glyph svg { width: 28px; height: 28px; }
+
+    /* ── Community Panel ────────────────────────────────────────── */
+    .community-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 850;
+      background: var(--bg);
+      overflow-y: auto;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      padding: 2rem 1.5rem 4rem;
+    }
+    .community-panel.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .community-inner {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .community-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.75rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .community-title {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--glow-c), var(--glow-p));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+    .community-subtitle {
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      margin-top: 0.3rem;
+      letter-spacing: 0.05em;
+    }
+    .community-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 0.4rem 1.2rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(74,243,255,0.06);
+    }
+    .community-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .echo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      position: relative;
+    }
+    .echo-card:hover {
+      border-color: rgba(74,243,255,0.25);
+      box-shadow: 0 0 20px rgba(74,243,255,0.06);
+    }
+    .echo-card.playing {
+      border-color: var(--accent);
+      box-shadow: 0 0 24px rgba(74,243,255,0.18);
+    }
+    .echo-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.6rem;
+    }
+    .echo-card-username {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .echo-card-date {
+      font-size: 0.62rem;
+      color: var(--text-dim);
+    }
+    .echo-card-fp {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+    .echo-card-community {
+      font-size: 0.72rem;
+      color: #a78bfa;
+      margin-bottom: 0.8rem;
+    }
+    .echo-card-stats {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.9rem;
+    }
+    .echo-stat-chip {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.18rem 0.6rem;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+    .btn-preview {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-dim);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      padding: 0.45rem 0;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      font-family: inherit;
+    }
+    .btn-preview:hover, .echo-card.playing .btn-preview {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .echo-card.playing .btn-preview {
+      background: rgba(74,243,255,0.07);
+    }
+    .echo-card-badge {
+      position: absolute;
+      top: 0.8rem;
+      right: 0.8rem;
+      background: linear-gradient(135deg, var(--glow-c), var(--glow-p));
+      color: #070b15;
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+    }
+    .community-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--text-dim);
+      padding: 3rem 1rem;
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
   </style>
 </head>
 <body>
@@ -445,9 +620,9 @@
   </div>
 
   <nav class="home-nav">
-    <a href="#" class="nav-item">Explore</a>
-    <a href="#" class="nav-item">Communities</a>
-    <a href="#" class="nav-item">My Echo</a>
+    <a href="#" class="nav-item" id="nav-explore">Explore</a>
+    <a href="#" class="nav-item" id="nav-communities">Communities</a>
+    <a href="#" class="nav-item" id="nav-myecho">My Echo</a>
     <a href="#" class="nav-item">About</a>
   </nav>
 </main>
@@ -547,12 +722,31 @@
 
       <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" id="btn-enter">Enter Resonance ›</button>
+        <button class="btn btn-outline btn-sm" id="btn-share">&#8853; Share Echo</button>
         <button class="btn btn-ghost btn-sm" id="btn-replay">Try Again</button>
       </div>
     </div>
 
   </div><!-- /modal-box -->
 </div><!-- /modal-overlay -->
+
+<!-- ═══════════ Community Panel ════════════════════════════════ -->
+<div id="community-panel" class="community-panel" aria-hidden="true">
+  <div class="community-inner">
+    <div class="community-header">
+      <div>
+        <h2 class="community-title">Echo Community</h2>
+        <p class="community-subtitle">Discover emotional fingerprints from across the Resonance universe</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btn-close-community">&#x2715; Close</button>
+    </div>
+    <div class="community-tabs">
+      <button class="tab-btn active" data-tab="all">All Echoes</button>
+      <button class="tab-btn" data-tab="mine">My Community</button>
+    </div>
+    <div id="community-grid" class="community-grid"></div>
+  </div>
+</div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
@@ -1099,6 +1293,7 @@ function finishGame() {
     `Playing your echo &mdash; <span>${pitchLabel} pitch · ${rhythmLabel} rhythm</span>`;
 
   showScreen(screenResult);
+  updateShareButton();
 
   // Store in localStorage
   const fpData = {
@@ -1181,6 +1376,203 @@ window.addEventListener('resize', () => {
   // Always show the game on load (fresh entry to the site)
   // (The modal is always shown; users can re-enter the platform via "Enter Resonance")
 })();
+
+/* ══════════════════════════════════════════════════════════════
+   COMMUNITY FEATURE
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Mock community data (10 virtual echoes, all 6 fingerprint types) ── */
+const MOCK_COMMUNITY = [
+  { username: 'Spark#FF3A',    fingerprint: 'Radiant Storm',   community: 'The High Energy Arena',  pitchNorm: 0.82, rhythmNorm: 0.78, pitchLabel: 'Very High', rhythmLabel: 'Very Dense',  capturedAt: '2026-04-07T14:22:00Z', isMock: true },
+  { username: 'Drifter#2C9E',  fingerprint: 'Silent Root',     community: 'The Quiet Trail',         pitchNorm: 0.12, rhythmNorm: 0.18, pitchLabel: 'Very Low',  rhythmLabel: 'Very Sparse', capturedAt: '2026-04-07T10:05:00Z', isMock: true },
+  { username: 'Wave#B471',     fingerprint: 'Flowing Current', community: 'The Rhythm Collective',   pitchNorm: 0.55, rhythmNorm: 0.73, pitchLabel: 'High',       rhythmLabel: 'Dense',        capturedAt: '2026-04-06T22:41:00Z', isMock: true },
+  { username: 'Arc#0D5F',      fingerprint: 'Crystal Horizon', community: 'The Open Sky',            pitchNorm: 0.79, rhythmNorm: 0.28, pitchLabel: 'Very High', rhythmLabel: 'Sparse',       capturedAt: '2026-04-06T18:17:00Z', isMock: true },
+  { username: 'Echo#7A3C',     fingerprint: 'Still Waters',    community: 'The Balanced Path',       pitchNorm: 0.48, rhythmNorm: 0.38, pitchLabel: 'Low',        rhythmLabel: 'Sparse',       capturedAt: '2026-04-06T09:53:00Z', isMock: true },
+  { username: 'Glow#E1B2',     fingerprint: 'Deep Tide',       community: 'The Deep Current',        pitchNorm: 0.21, rhythmNorm: 0.67, pitchLabel: 'Very Low',  rhythmLabel: 'Dense',        capturedAt: '2026-04-05T20:30:00Z', isMock: true },
+  { username: 'Pulse#4D88',    fingerprint: 'Radiant Storm',   community: 'The High Energy Arena',   pitchNorm: 0.91, rhythmNorm: 0.85, pitchLabel: 'Very High', rhythmLabel: 'Very Dense',  capturedAt: '2026-04-05T15:44:00Z', isMock: true },
+  { username: 'Void#C23A',     fingerprint: 'Silent Root',     community: 'The Quiet Trail',         pitchNorm: 0.08, rhythmNorm: 0.22, pitchLabel: 'Very Low',  rhythmLabel: 'Very Sparse', capturedAt: '2026-04-05T08:12:00Z', isMock: true },
+  { username: 'Seeker#9F61',   fingerprint: 'Crystal Horizon', community: 'The Open Sky',            pitchNorm: 0.74, rhythmNorm: 0.31, pitchLabel: 'Very High', rhythmLabel: 'Sparse',       capturedAt: '2026-04-04T21:07:00Z', isMock: true },
+  { username: 'Wanderer#1E4D', fingerprint: 'Flowing Current', community: 'The Rhythm Collective',   pitchNorm: 0.51, rhythmNorm: 0.62, pitchLabel: 'High',       rhythmLabel: 'Dense',        capturedAt: '2026-04-04T14:33:00Z', isMock: true },
+];
+
+/* ── Community helpers ─────────────────────────────────────────── */
+function getCommunityEntries() {
+  const entries = [...MOCK_COMMUNITY];
+  try {
+    const shared = JSON.parse(localStorage.getItem('resonance_community') || '[]');
+    entries.unshift(...shared);
+  } catch(e) {}
+  return entries;
+}
+
+function getUserFingerprint() {
+  try { return JSON.parse(localStorage.getItem('resonance_fingerprint')); } catch(e) { return null; }
+}
+
+function isAlreadyShared() {
+  const fp = getUserFingerprint();
+  if (!fp) return false;
+  try {
+    const shared = JSON.parse(localStorage.getItem('resonance_community') || '[]');
+    return shared.some(e => e.capturedAt === fp.capturedAt);
+  } catch(e) { return false; }
+}
+
+function formatEntryDate(isoStr) {
+  const d = new Date(isoStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+let currentPreviewEntry = null;
+let communityActiveFilter = 'all';
+
+function renderCommunityGrid(filter) {
+  if (filter !== undefined) communityActiveFilter = filter;
+  const grid = document.getElementById('community-grid');
+  let entries = getCommunityEntries();
+
+  if (communityActiveFilter === 'mine') {
+    const fp = getUserFingerprint();
+    if (fp) {
+      entries = entries.filter(e => e.community === fp.community);
+    } else {
+      entries = [];
+    }
+  }
+
+  if (entries.length === 0) {
+    grid.innerHTML = communityActiveFilter === 'mine'
+      ? '<div class="community-empty">Complete your echo first, then your community members will appear here.</div>'
+      : '<div class="community-empty">No echoes yet. Be the first to share!</div>';
+    return;
+  }
+
+  const fp = getUserFingerprint();
+  grid.innerHTML = entries.map((entry, idx) => {
+    const isYours = fp && !entry.isMock && entry.capturedAt === fp.capturedAt;
+    const isPlaying = currentPreviewEntry && currentPreviewEntry.capturedAt === entry.capturedAt;
+    return `
+      <div class="echo-card${isPlaying ? ' playing' : ''}" data-idx="${idx}">
+        ${isYours ? '<div class="echo-card-badge">You</div>' : ''}
+        <div class="echo-card-top">
+          <div class="echo-card-username">${entry.username}</div>
+          <div class="echo-card-date">${formatEntryDate(entry.capturedAt)}</div>
+        </div>
+        <div class="echo-card-fp">&ldquo;${entry.fingerprint}&rdquo;</div>
+        <div class="echo-card-community">${entry.community}</div>
+        <div class="echo-card-stats">
+          <span class="echo-stat-chip">Pitch: ${entry.pitchLabel}</span>
+          <span class="echo-stat-chip">Rhythm: ${entry.rhythmLabel}</span>
+        </div>
+        <button class="btn-preview" data-idx="${idx}">
+          ${isPlaying ? '&#9632; Stop' : '&#9654; Preview'}
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.btn-preview').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      const entry = entries[idx];
+      if (currentPreviewEntry && currentPreviewEntry.capturedAt === entry.capturedAt) {
+        stopResultAudio();
+        currentPreviewEntry = null;
+        renderCommunityGrid();
+      } else {
+        stopResultAudio();
+        currentPreviewEntry = entry;
+        renderCommunityGrid();
+        if (!audioCtx) initAudio();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        playResultFragment(entry.pitchNorm, entry.rhythmNorm, () => {
+          currentPreviewEntry = null;
+          renderCommunityGrid();
+        });
+      }
+    });
+  });
+}
+
+function openCommunity(filter) {
+  communityActiveFilter = filter || 'all';
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === communityActiveFilter);
+  });
+  renderCommunityGrid(communityActiveFilter);
+  const panel = document.getElementById('community-panel');
+  panel.removeAttribute('aria-hidden');
+  panel.classList.add('visible');
+}
+
+function closeCommunity() {
+  stopResultAudio();
+  currentPreviewEntry = null;
+  const panel = document.getElementById('community-panel');
+  panel.classList.remove('visible');
+  panel.setAttribute('aria-hidden', 'true');
+}
+
+/* ── Share to Community ────────────────────────────────────────── */
+function shareToCommmunity() {
+  if (isAlreadyShared()) return;
+  const fp = getUserFingerprint();
+  if (!fp) return;
+  try {
+    const shared = JSON.parse(localStorage.getItem('resonance_community') || '[]');
+    shared.unshift(fp);
+    localStorage.setItem('resonance_community', JSON.stringify(shared));
+  } catch(e) {}
+  updateShareButton();
+}
+
+function updateShareButton() {
+  const btn = document.getElementById('btn-share');
+  if (!btn) return;
+  if (isAlreadyShared()) {
+    btn.textContent = '\u2713 Shared!';
+    btn.disabled = true;
+    btn.classList.remove('btn-outline');
+    btn.classList.add('btn-ghost');
+  } else {
+    btn.innerHTML = '&#8853; Share Echo';
+    btn.disabled = false;
+    btn.classList.add('btn-outline');
+    btn.classList.remove('btn-ghost');
+  }
+}
+
+/* ── Nav & community wiring ────────────────────────────────────── */
+document.getElementById('nav-explore').addEventListener('click', e => {
+  e.preventDefault();
+  openCommunity('all');
+});
+
+document.getElementById('nav-communities').addEventListener('click', e => {
+  e.preventDefault();
+  openCommunity('mine');
+});
+
+document.getElementById('nav-myecho').addEventListener('click', e => {
+  e.preventDefault();
+  modalOverlay.style.display = '';
+  modalOverlay.classList.remove('fade-out');
+  platformHome.classList.remove('visible');
+  platformHome.setAttribute('aria-hidden', 'true');
+  showScreen(screenIntro);
+});
+
+document.getElementById('btn-close-community').addEventListener('click', closeCommunity);
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCommunityGrid(btn.dataset.tab);
+  });
+});
+
+document.getElementById('btn-share').addEventListener('click', shareToCommmunity);
 
 </script>
 </body>
