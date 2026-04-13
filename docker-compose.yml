@@ -1,0 +1,103 @@
+version: "3.9"
+
+services:
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: resonance
+      POSTGRES_PASSWORD: resonance_pass
+      POSTGRES_DB: resonance_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U resonance -d resonance_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── Backend (Node.js/Express) ────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://resonance:resonance_pass@postgres:5432/resonance_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-refresh-in-production}
+      AUDIO_SERVICE_URL: http://audio-service:8000
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+    ports:
+      - "3001:3001"
+    volumes:
+      - uploads_data:/tmp/resonance-uploads
+
+  # ── Audio Feature Extraction (Python/FastAPI) ──────────────────────────────
+  audio-service:
+    build:
+      context: ./audio-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://resonance:resonance_pass@postgres:5432/resonance_db
+      REDIS_URL: redis://redis:6379/0
+      PINECONE_API_KEY: ${PINECONE_API_KEY:-}
+      PINECONE_INDEX_NAME: ${PINECONE_INDEX_NAME:-resonance-audio}
+      HOST: 0.0.0.0
+      PORT: 8000
+    ports:
+      - "8000:8000"
+
+  # ── Celery Worker (audio task queue) ──────────────────────────────────────
+  celery-worker:
+    build:
+      context: ./audio-service
+      dockerfile: Dockerfile
+    command: celery -A app.tasks worker --queues resonance-audio --concurrency 2 --loglevel=info
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://resonance:resonance_pass@postgres:5432/resonance_db
+      REDIS_URL: redis://redis:6379/0
+      PINECONE_API_KEY: ${PINECONE_API_KEY:-}
+      PINECONE_INDEX_NAME: ${PINECONE_INDEX_NAME:-resonance-audio}
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:
