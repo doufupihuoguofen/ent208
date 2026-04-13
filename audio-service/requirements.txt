@@ -1,6 +1,6 @@
 fastapi==0.111.1
 uvicorn[standard]==0.30.1
-python-multipart==0.0.9
+python-multipart==0.0.22
 librosa==0.10.2
 numpy==1.26.4
 psycopg2-binary==2.9.9
