@@ -754,6 +754,31 @@
     }
     .btn-new-post:hover { opacity: 0.88; }
     .forum-feed { display: flex; flex-direction: column; gap: 1.25rem; }
+    .forum-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .forum-tab-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 0.4rem 1.2rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .forum-tab-btn.active, .forum-tab-btn:hover {
+      border-color: #fbbf24;
+      color: #fbbf24;
+      background: rgba(251,191,36,0.06);
+    }
     .post-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -1117,6 +1142,10 @@
         <button class="btn-new-post" id="btn-open-new-post">&#9834; New Post</button>
         <button class="btn btn-ghost btn-sm" id="btn-close-forum">&#x2715; Close</button>
       </div>
+    </div>
+    <div class="forum-tabs">
+      <button class="forum-tab-btn active" data-forum-tab="all">All</button>
+      <button class="forum-tab-btn" data-forum-tab="myvibe">My Vibe</button>
     </div>
     <div id="forum-feed" class="forum-feed"></div>
   </div>
@@ -2161,6 +2190,19 @@ updateNavAuth();
    FEATURE 2 — FORUM (Music Feed + Comments)
    ══════════════════════════════════════════════════════════════════ */
 
+// ── Mock user profiles (8 dummy accounts) ────────────────────────
+const MOCK_USERS = [
+  { id: 'mu-1', username: 'Drifter#2C9E', fingerprint: 'Silent Root',     community: 'The Quiet Trail',       pitchNorm: 0.12, rhythmNorm: 0.18, joined: '2026-03-10' },
+  { id: 'mu-2', username: 'Spark#FF3A',   fingerprint: 'Radiant Storm',   community: 'The High Energy Arena', pitchNorm: 0.88, rhythmNorm: 0.82, joined: '2026-02-28' },
+  { id: 'mu-3', username: 'Wave#B471',    fingerprint: 'Flowing Current', community: 'The Rhythm Collective', pitchNorm: 0.55, rhythmNorm: 0.69, joined: '2026-03-15' },
+  { id: 'mu-4', username: 'Arc#0D5F',     fingerprint: 'Crystal Horizon', community: 'The Open Sky',          pitchNorm: 0.77, rhythmNorm: 0.24, joined: '2026-03-01' },
+  { id: 'mu-5', username: 'Glow#E1B2',    fingerprint: 'Deep Tide',       community: 'The Deep Current',      pitchNorm: 0.18, rhythmNorm: 0.72, joined: '2026-03-22' },
+  { id: 'mu-6', username: 'Echo#7A3C',    fingerprint: 'Still Waters',    community: 'The Balanced Path',     pitchNorm: 0.44, rhythmNorm: 0.41, joined: '2026-02-14' },
+  { id: 'mu-7', username: 'Pulse#4D88',   fingerprint: 'Radiant Storm',   community: 'The High Energy Arena', pitchNorm: 0.92, rhythmNorm: 0.88, joined: '2026-04-01' },
+  { id: 'mu-8', username: 'Seeker#9F61',  fingerprint: 'Flowing Current', community: 'The Rhythm Collective', pitchNorm: 0.58, rhythmNorm: 0.52, joined: '2026-03-30' },
+];
+
+// ── Mock forum posts (10 preset entries) ─────────────────────────
 const MOCK_POSTS = [
   {
     id: 'mock-1', title: 'Late Night Signals', isMock: true,
@@ -2241,6 +2283,29 @@ const MOCK_POSTS = [
     createdAt: '2026-04-03T07:45:00Z', likes: 11,
     comments: [],
   },
+  {
+    id: 'mock-9', title: 'Noon Mirage', isMock: true,
+    description: 'Warm mid-range tones floating over a steady pulse — feels like heat shimmer on pavement.',
+    username: 'Seeker#9F61', fingerprint: 'Flowing Current', community: 'The Rhythm Collective',
+    pitchNorm: 0.58, rhythmNorm: 0.52, pitchLabel: 'High', rhythmLabel: 'Moderate',
+    createdAt: '2026-04-02T13:20:00Z', likes: 16,
+    comments: [
+      { username: 'Drifter#2C9E', text: 'The midday energy is real here.', createdAt: '2026-04-02T14:55:00Z' },
+      { username: 'Arc#0D5F',     text: 'Steady and warm. Love the balance.', createdAt: '2026-04-02T16:30:00Z' },
+    ],
+  },
+  {
+    id: 'mock-10', title: 'Void Signal', isMock: true,
+    description: 'Sub-bass frequencies layered with erratic high bursts. Feels like static from another dimension.',
+    username: 'Echo#7A3C', fingerprint: 'Deep Tide', community: 'The Deep Current',
+    pitchNorm: 0.22, rhythmNorm: 0.65, pitchLabel: 'Low', rhythmLabel: 'Dense',
+    createdAt: '2026-04-01T21:05:00Z', likes: 33,
+    comments: [
+      { username: 'Pulse#4D88', text: 'This has an eerie pull I cannot explain.', createdAt: '2026-04-01T22:18:00Z' },
+      { username: 'Glow#E1B2',  text: 'Sounds like deep ocean bioluminescence.', createdAt: '2026-04-02T00:44:00Z' },
+      { username: 'Wave#B471',  text: 'Instant classic.', createdAt: '2026-04-02T07:11:00Z' },
+    ],
+  },
 ];
 
 function getForumPosts() {
@@ -2264,6 +2329,7 @@ function savePostComments(postId, comments) {
 
 let forumPlayingId = null;
 let forumWaveAnimId = null;
+let forumActiveTab = 'all'; // 'all' | 'myvibe'
 
 function drawStaticWaveform(canvas, pitchNorm, rhythmNorm) {
   const ctx = canvas.getContext('2d');
@@ -2321,9 +2387,21 @@ function startForumWaveAnim(pid) {
 
 function renderForum() {
   const feed  = document.getElementById('forum-feed');
-  const posts = getForumPosts();
+  let   posts = getForumPosts();
   const likes = getLikes();
   const user  = getCurrentUser();
+
+  // "My Vibe" tab: sort posts by Euclidean distance to user's fingerprint
+  if (forumActiveTab === 'myvibe') {
+    const fp = getUserFingerprint();
+    if (fp) {
+      posts = posts.slice().sort((a, b) => {
+        const distA = Math.hypot(a.pitchNorm - fp.pitchNorm, a.rhythmNorm - fp.rhythmNorm);
+        const distB = Math.hypot(b.pitchNorm - fp.pitchNorm, b.rhythmNorm - fp.rhythmNorm);
+        return distA - distB;
+      });
+    }
+  }
 
   if (posts.length === 0) {
     feed.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:3rem;line-height:1.8">No posts yet. Be the first to share!</div>';
@@ -2467,6 +2545,10 @@ function renderForum() {
 }
 
 function openForum() {
+  // Sync tab button state (forumActiveTab may have been changed previously)
+  document.querySelectorAll('.forum-tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.forumTab === forumActiveTab);
+  });
   renderForum();
   const panel = document.getElementById('forum-panel');
   panel.classList.add('visible');
@@ -2482,6 +2564,16 @@ function closeForum() {
 }
 
 document.getElementById('btn-close-forum').addEventListener('click', closeForum);
+
+// Forum "All / My Vibe" tab switching
+document.querySelectorAll('.forum-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.forum-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    forumActiveTab = btn.dataset.forumTab;
+    renderForum();
+  });
+});
 
 document.getElementById('btn-open-new-post').addEventListener('click', () => {
   if (!getCurrentUser()) { openAuth(); return; }
