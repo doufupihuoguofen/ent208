@@ -1165,6 +1165,36 @@
         <label class="auth-label" for="np-desc">Description</label>
         <textarea class="auth-input" id="np-desc" rows="3" placeholder="Describe what you felt…" maxlength="240" style="resize:vertical"></textarea>
       </div>
+      <div class="auth-field">
+        <label class="auth-label" for="np-mood">Mood Tag</label>
+        <select class="auth-input" id="np-mood">
+          <option value="">— select mood —</option>
+          <option value="Radiant Storm">Radiant Storm</option>
+          <option value="Silent Root">Silent Root</option>
+          <option value="Flowing Current">Flowing Current</option>
+          <option value="Crystal Horizon">Crystal Horizon</option>
+          <option value="Deep Tide">Deep Tide</option>
+          <option value="Still Waters">Still Waters</option>
+        </select>
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="np-genre">Music Genre</label>
+        <select class="auth-input" id="np-genre">
+          <option value="">— select genre —</option>
+          <option value="Ambient">Ambient</option>
+          <option value="Electronic">Electronic</option>
+          <option value="Chillwave">Chillwave</option>
+          <option value="Drum & Bass">Drum &amp; Bass</option>
+          <option value="Lo-Fi">Lo-Fi</option>
+          <option value="Experimental">Experimental</option>
+          <option value="Synthwave">Synthwave</option>
+          <option value="Classical">Classical</option>
+        </select>
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="np-audio">Audio File <span style="color:var(--text-dim)">(optional)</span></label>
+        <input class="auth-input" id="np-audio" type="file" accept="audio/*" style="padding:0.4rem;cursor:pointer" />
+      </div>
       <p style="font-size:0.72rem;color:var(--text-dim);line-height:1.6">
         Your current echo (<span id="np-fp-preview" style="color:var(--accent)">—</span>) will be attached as the audio fingerprint.
       </p>
@@ -1221,6 +1251,37 @@
   </div>
 </div>
 
+<!-- ═══════════ Profile Panel ══════════════════════════════════ -->
+<div id="profile-panel" class="auth-panel" aria-hidden="true" style="z-index:860">
+  <div class="auth-box" style="position:relative;max-width:520px;width:95vw;padding:1.75rem">
+    <button class="auth-close-btn" id="btn-close-profile">&#x2715;</button>
+    <div class="auth-logo" id="profile-displayname" style="font-size:1.2rem;margin-bottom:0.25rem">—</div>
+    <div style="color:var(--text-dim);font-size:0.75rem;margin-bottom:1rem" id="profile-username-sub"></div>
+    <div id="profile-bio" style="color:var(--text-dim);font-size:0.82rem;margin-bottom:1rem;line-height:1.6"></div>
+    <div style="display:flex;gap:1.5rem;margin-bottom:1.25rem;flex-wrap:wrap">
+      <div style="text-align:center">
+        <div style="font-size:1.25rem;font-weight:700;color:var(--accent)" id="profile-posts">—</div>
+        <div style="font-size:0.68rem;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase">Posts</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:1.25rem;font-weight:700;color:var(--glow-p)" id="profile-followers">—</div>
+        <div style="font-size:0.68rem;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase">Followers</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:1.25rem;font-weight:700;color:var(--text)" id="profile-following">—</div>
+        <div style="font-size:0.68rem;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase">Following</div>
+      </div>
+    </div>
+    <div id="profile-follow-row" style="margin-bottom:1rem;display:none">
+      <button id="btn-profile-follow" class="btn btn-outline btn-sm" style="font-size:0.78rem">Follow</button>
+    </div>
+    <div id="profile-badges" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem"></div>
+    <div style="font-size:0.78rem;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.6rem">Recent Posts</div>
+    <div id="profile-posts-list" style="display:flex;flex-direction:column;gap:0.6rem;max-height:40vh;overflow-y:auto"></div>
+    <div id="profile-error" style="color:#f87171;font-size:0.78rem;margin-top:0.5rem"></div>
+  </div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════════════════════════════
    YOUR FIRST ECHO — Emotional Fingerprint Mini-Game
@@ -1228,6 +1289,80 @@
    ═══════════════════════════════════════════════════════════════ */
 
 'use strict';
+
+/* ── API Configuration ──────────────────────────────────────────── */
+// Change API_BASE to match your deployed backend URL
+const API_BASE = 'http://localhost:3001/api';
+
+function getToken() {
+  return localStorage.getItem('resonance_token') || null;
+}
+function setTokens(access, refresh) {
+  if (access) localStorage.setItem('resonance_token', access);
+  if (refresh) localStorage.setItem('resonance_refresh_token', refresh);
+}
+function clearTokens() {
+  localStorage.removeItem('resonance_token');
+  localStorage.removeItem('resonance_refresh_token');
+  localStorage.removeItem('resonance_user');
+}
+
+/**
+ * Authenticated fetch wrapper.
+ * Automatically adds Authorization header when a token exists.
+ * Sends JSON body unless options.body is FormData.
+ */
+async function apiFetch(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  const token = getToken();
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (options.body && !(options.body instanceof FormData) && typeof options.body === 'object') {
+    headers['Content-Type'] = 'application/json';
+    options = { ...options, body: JSON.stringify(options.body) };
+  }
+  return fetch(API_BASE + path, { ...options, headers });
+}
+
+/**
+ * Normalise a real API post into the shape used by renderForum().
+ * pitchNorm and rhythmNorm fall back to the stored fingerprint JSON,
+ * which the frontend saves when creating a post.
+ */
+function normalizePost(apiPost) {
+  const fp = apiPost.fingerprint || {};
+  const pitchNorm  = typeof fp.pitchNorm  === 'number' ? fp.pitchNorm  : 0.5;
+  const rhythmNorm = typeof fp.rhythmNorm === 'number' ? fp.rhythmNorm : 0.5;
+  return {
+    id:          apiPost.id,
+    title:       apiPost.title || '(untitled)',
+    description: apiPost.content || '',
+    username:    apiPost.user?.username   || 'Unknown',
+    displayName: apiPost.user?.displayName || apiPost.user?.username || 'Unknown',
+    fingerprint: apiPost.moodTag || fp.label || 'Still Waters',
+    community:   fp.community   || apiPost.musicGenre || 'The Community',
+    pitchNorm,
+    rhythmNorm,
+    pitchLabel:   fp.pitchLabel   || normLabel(pitchNorm),
+    rhythmLabel:  fp.rhythmLabel  || normLabel(rhythmNorm),
+    createdAt:   apiPost.createdAt,
+    likes:       apiPost.likeCount   || 0,
+    commentCount:apiPost.commentCount|| 0,
+    comments:    [],     // comments loaded lazily on expand
+    audioUrl:    apiPost.audioUrl   || null,
+    gameTags:    apiPost.gameTags   || [],
+    moodTag:     apiPost.moodTag    || null,
+    musicGenre:  apiPost.musicGenre || null,
+    isApiPost:   true,   // flag: use API for interactions
+  };
+}
+
+function normLabel(v) {
+  if (v < 0.25) return 'Very Low';
+  if (v < 0.45) return 'Low';
+  if (v < 0.6)  return 'Mid';
+  if (v < 0.8)  return 'High';
+  return 'Very High';
+}
 
 /* ── DOM refs ─────────────────────────────────────────────────── */
 const modalOverlay  = document.getElementById('modal-overlay');
@@ -2018,7 +2153,12 @@ function updateShareButton() {
 /* ── Nav & community wiring ────────────────────────────────────── */
 document.getElementById('nav-explore').addEventListener('click', e => {
   e.preventDefault();
-  openCommunity('all');
+  const cu = getCurrentUser();
+  if (cu && cu.username) {
+    openProfile(cu.username);
+  } else {
+    openCommunity('all');
+  }
 });
 
 document.getElementById('nav-communities').addEventListener('click', e => {
@@ -2056,60 +2196,63 @@ document.getElementById('btn-share').addEventListener('click', shareToCommunity)
    FEATURE 1 — USER AUTH (localStorage-based session)
    ══════════════════════════════════════════════════════════════════ */
 
-/* WARNING: simpleHash (FNV-1a) is NOT cryptographically secure.
-   This is a client-side demo only — NEVER use this pattern in production.
-   A real app must hash passwords server-side with bcrypt/scrypt/argon2. */
-function simpleHash(str) {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = (h * 0x01000193) >>> 0;
-  }
-  return h.toString(16);
-}
-
-function getUsers() {
-  try { return JSON.parse(localStorage.getItem('resonance_users') || '[]'); } catch(e) { return []; }
-}
-
-function saveUsers(users) {
-  try { localStorage.setItem('resonance_users', JSON.stringify(users)); } catch(e) {}
-}
-
+/* ── User session helpers ─────────────────────────────────────────
+   Reads from 'resonance_user' (set by real API login) OR falls back
+   to the legacy 'resonance_session' key (set by old mock auth). */
 function getCurrentUser() {
-  try { return JSON.parse(localStorage.getItem('resonance_session') || 'null'); } catch(e) { return null; }
+  try {
+    return JSON.parse(localStorage.getItem('resonance_user') || 'null')
+        || JSON.parse(localStorage.getItem('resonance_session') || 'null');
+  } catch(e) { return null; }
 }
 
 function setCurrentUser(user) {
-  try { localStorage.setItem('resonance_session', JSON.stringify(user)); } catch(e) {}
+  try {
+    localStorage.setItem('resonance_user',    JSON.stringify(user));
+    localStorage.setItem('resonance_session', JSON.stringify(user)); // legacy compat
+  } catch(e) {}
 }
 
 function logout() {
-  try { localStorage.removeItem('resonance_session'); } catch(e) {}
+  clearTokens();
+  localStorage.removeItem('resonance_session');
   updateNavAuth();
 }
 
-function signUp(username, email, password) {
-  username = username.trim();
-  email    = email.trim().toLowerCase();
-  if (!username || username.length < 2) return 'Username must be at least 2 characters.';
-  if (!/\S+@\S+\.\S+/.test(email)) return 'Please enter a valid email.';
-  if (password.length < 6) return 'Password must be at least 6 characters.';
-  const users = getUsers();
-  if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) return 'Username already taken.';
-  if (users.some(u => u.email === email)) return 'Email already registered.';
-  const user = { id: Date.now().toString(36), username, email, passwordHash: simpleHash(password), createdAt: new Date().toISOString() };
-  users.push(user);
-  saveUsers(users);
+/* ── Offline-fallback mock auth (used when API is unreachable) ─── */
+function _mockHash(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return h.toString(16);
+}
+function _getMockUsers() {
+  try { return JSON.parse(localStorage.getItem('resonance_users') || '[]'); } catch(e) { return []; }
+}
+function _saveMockUsers(u) {
+  try { localStorage.setItem('resonance_users', JSON.stringify(u)); } catch(e) {}
+}
+function _mockLogin(identifier, password) {
+  const users = _getMockUsers();
+  const user  = users.find(u =>
+    u.username.toLowerCase() === identifier.trim().toLowerCase() ||
+    u.email === identifier.trim().toLowerCase()
+  );
+  if (!user) return 'User not found (offline mode).';
+  if (user.passwordHash !== _mockHash(password)) return 'Incorrect password.';
   setCurrentUser({ id: user.id, username: user.username, email: user.email, createdAt: user.createdAt });
   return null;
 }
-
-function login(username, password) {
-  const users = getUsers();
-  const user  = users.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
-  if (!user) return 'User not found.';
-  if (user.passwordHash !== simpleHash(password)) return 'Incorrect password.';
+function _mockSignUp(username, email, password) {
+  username = username.trim(); email = email.trim().toLowerCase();
+  if (!username || username.length < 2) return 'Username must be at least 2 characters.';
+  if (!/\S+@\S+\.\S+/.test(email))      return 'Please enter a valid email.';
+  if (password.length < 6)              return 'Password must be at least 6 characters.';
+  const users = _getMockUsers();
+  if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) return 'Username already taken.';
+  if (users.some(u => u.email === email)) return 'Email already registered.';
+  const user = { id: Date.now().toString(36), username, email, passwordHash: _mockHash(password), createdAt: new Date().toISOString() };
+  users.push(user);
+  _saveMockUsers(users);
   setCurrentUser({ id: user.id, username: user.username, email: user.email, createdAt: user.createdAt });
   return null;
 }
@@ -2167,21 +2310,50 @@ document.getElementById('auth-switch-btn').addEventListener('click', () => {
   switchAuthTab(loginActive ? 'signup' : 'login');
 });
 
-document.getElementById('btn-do-login').addEventListener('click', () => {
-  const uname = document.getElementById('login-username').value;
+document.getElementById('btn-do-login').addEventListener('click', async () => {
+  const identifier = document.getElementById('login-username').value.trim();
   const pwd   = document.getElementById('login-password').value;
-  const err   = login(uname, pwd);
-  if (err) { document.getElementById('login-error').textContent = err; }
-  else { closeAuth(); updateNavAuth(); }
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('btn-do-login');
+  if (!identifier || !pwd) { errEl.textContent = 'Please enter username/email and password.'; return; }
+  btn.disabled = true; btn.textContent = 'Logging in…';
+  try {
+    const resp = await apiFetch('/auth/login', { method: 'POST', body: { identifier, password: pwd } });
+    const data = await resp.json();
+    if (!resp.ok) { errEl.textContent = data.error || 'Login failed.'; return; }
+    setTokens(data.accessToken, data.refreshToken);
+    setCurrentUser(data.user);
+    closeAuth(); updateNavAuth();
+  } catch(e) {
+    // Backend unreachable — fall back to offline mock auth
+    const err = _mockLogin(identifier, pwd);
+    if (err) { errEl.textContent = err; }
+    else     { closeAuth(); updateNavAuth(); }
+  } finally { btn.disabled = false; btn.textContent = 'Login ›'; }
 });
 
-document.getElementById('btn-do-signup').addEventListener('click', () => {
-  const uname = document.getElementById('su-username').value;
-  const email = document.getElementById('su-email').value;
+document.getElementById('btn-do-signup').addEventListener('click', async () => {
+  const uname = document.getElementById('su-username').value.trim();
+  const email = document.getElementById('su-email').value.trim();
   const pwd   = document.getElementById('su-password').value;
-  const err   = signUp(uname, email, pwd);
-  if (err) { document.getElementById('signup-error').textContent = err; }
-  else { closeAuth(); updateNavAuth(); }
+  const errEl = document.getElementById('signup-error');
+  const btn   = document.getElementById('btn-do-signup');
+  if (!uname || !email || !pwd) { errEl.textContent = 'All fields are required.'; return; }
+  if (pwd.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
+  btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    const resp = await apiFetch('/auth/register', { method: 'POST', body: { username: uname, email, password: pwd } });
+    const data = await resp.json();
+    if (!resp.ok) { errEl.textContent = data.error || 'Registration failed.'; return; }
+    setTokens(data.accessToken, data.refreshToken);
+    setCurrentUser(data.user);
+    closeAuth(); updateNavAuth();
+  } catch(e) {
+    // Backend unreachable — fall back to offline mock auth
+    const err = _mockSignUp(uname, email, pwd);
+    if (err) { errEl.textContent = err; }
+    else     { closeAuth(); updateNavAuth(); }
+  } finally { btn.disabled = false; btn.textContent = 'Create Account ›'; }
 });
 
 updateNavAuth();
@@ -2385,21 +2557,20 @@ function startForumWaveAnim(pid) {
   tick();
 }
 
-function renderForum() {
+function renderForum(posts) {
   const feed  = document.getElementById('forum-feed');
-  let   posts = getForumPosts();
-  const likes = getLikes();
-  const user  = getCurrentUser();
-
-  // "My Vibe" tab: sort posts by Euclidean distance to user's fingerprint
-  if (forumActiveTab === 'myvibe') {
-    const fp = getUserFingerprint();
-    if (fp) {
-      posts = posts.slice().sort((a, b) => {
-        const distA = Math.hypot(a.pitchNorm - fp.pitchNorm, a.rhythmNorm - fp.rhythmNorm);
-        const distB = Math.hypot(b.pitchNorm - fp.pitchNorm, b.rhythmNorm - fp.rhythmNorm);
-        return distA - distB;
-      });
+  // If no posts array supplied (legacy synchronous path), use mock data
+  if (!posts) {
+    posts = getForumPosts();
+    if (forumActiveTab === 'myvibe') {
+      const fp = getUserFingerprint();
+      if (fp) {
+        posts = posts.slice().sort((a, b) => {
+          const distA = Math.hypot(a.pitchNorm - fp.pitchNorm, a.rhythmNorm - fp.rhythmNorm);
+          const distB = Math.hypot(b.pitchNorm - fp.pitchNorm, b.rhythmNorm - fp.rhythmNorm);
+          return distA - distB;
+        });
+      }
     }
   }
 
@@ -2407,6 +2578,9 @@ function renderForum() {
     feed.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:3rem;line-height:1.8">No posts yet. Be the first to share!</div>';
     return;
   }
+
+  const likes = getLikes();
+  const user  = getCurrentUser();
 
   feed.innerHTML = posts.map(post => {
     const savedComments = getPostComments(post.id);
@@ -2455,7 +2629,7 @@ function renderForum() {
             '&#9825; ' + likeCount +
           '</button>' +
           '<button class="post-action-btn" data-toggle-comments="' + escapeHtml(post.id) + '">' +
-            '&#128172; ' + comments.length + ' comments' +
+            '&#128172; ' + (post.isApiPost ? (post.commentCount || 0) : comments.length) + ' comments' +
           '</button>' +
         '</div>' +
       '</div>' +
@@ -2475,16 +2649,16 @@ function renderForum() {
       if (forumPlayingId === pid) {
         stopResultAudio();
         forumPlayingId = null;
-        renderForum();
+        renderForum(posts);
       } else {
         stopResultAudio();
         forumPlayingId = pid;
-        renderForum();
+        renderForum(posts);
         if (!audioCtx) initAudio();
         if (audioCtx.state === 'suspended') audioCtx.resume();
         playResultFragment(post.pitchNorm, post.rhythmNorm, () => {
           forumPlayingId = null;
-          renderForum();
+          renderForum(posts);
         });
         startForumWaveAnim(pid);
       }
@@ -2493,18 +2667,38 @@ function renderForum() {
 
   // Wire like buttons
   feed.querySelectorAll('[data-like-id]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (!getCurrentUser()) { openAuth(); return; }
       const pid  = btn.dataset.likeId;
       const post = posts.find(p => p.id === pid);
-      const lk   = getLikes();
-      const key  = 'liked_' + pid + '_' + getCurrentUser().id;
-      if (lk[key]) return;
-      lk[key] = true;
-      lk[pid] = (lk[pid] !== undefined ? lk[pid] : post.likes) + 1;
-      saveLikes(lk);
-      btn.classList.add('liked');
-      btn.innerHTML = '&#9825; ' + lk[pid];
+      if (post && post.isApiPost && getToken()) {
+        // Real API like toggle
+        btn.disabled = true;
+        try {
+          const resp = await apiFetch('/posts/' + pid + '/like', { method: 'POST' });
+          if (resp.ok) {
+            const data = await resp.json();
+            const lk   = getLikes();
+            const prev = lk[pid] !== undefined ? lk[pid] : (post.likes || 0);
+            lk[pid]    = data.liked ? prev + 1 : Math.max(0, prev - 1);
+            const key  = 'liked_' + pid + '_' + getCurrentUser().id;
+            lk[key]    = data.liked;
+            saveLikes(lk);
+            btn.classList.toggle('liked', data.liked);
+            btn.innerHTML = '&#9825; ' + lk[pid];
+          }
+        } catch(e) { /* ignore */ } finally { btn.disabled = false; }
+      } else {
+        // Offline/mock toggle
+        const lk  = getLikes();
+        const key = 'liked_' + pid + '_' + getCurrentUser().id;
+        if (lk[key]) return;
+        lk[key] = true;
+        lk[pid] = (lk[pid] !== undefined ? lk[pid] : (post ? post.likes : 0)) + 1;
+        saveLikes(lk);
+        btn.classList.add('liked');
+        btn.innerHTML = '&#9825; ' + lk[pid];
+      }
     });
   });
 
@@ -2518,7 +2712,7 @@ function renderForum() {
 
   // Wire send comment
   feed.querySelectorAll('.btn-send-comment').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const pid   = btn.dataset.postId;
       const input = feed.querySelector('.comment-input[data-post-id="' + CSS.escape(pid) + '"]');
       const cu    = getCurrentUser();
@@ -2526,12 +2720,36 @@ function renderForum() {
       const text = input.value.trim();
       if (!text) return;
       const post = posts.find(p => p.id === pid);
-      const existing = getPostComments(pid) !== null ? getPostComments(pid) : (post ? post.comments : []);
-      savePostComments(pid, [...existing, { username: cu.username, text, createdAt: new Date().toISOString() }]);
-      input.value = '';
-      renderForum();
-      const sec = document.getElementById('comments-' + pid);
-      if (sec) sec.classList.add('open');
+      btn.disabled = true;
+      if (post && post.isApiPost && getToken()) {
+        // Real API comment
+        try {
+          const resp = await apiFetch('/posts/' + pid + '/comments', { method: 'POST', body: { content: text } });
+          if (resp.ok) {
+            input.value = '';
+            // Append comment locally without full re-render
+            const list = document.querySelector('#comments-' + CSS.escape(pid) + ' .comment-list');
+            if (list) {
+              const div = document.createElement('div');
+              div.className = 'comment-item';
+              div.innerHTML = '<div class="comment-author">' + escapeHtml(cu.username) + '</div>' +
+                              '<div class="comment-text">' + escapeHtml(text) + '</div>';
+              list.appendChild(div);
+            }
+            const sec = document.getElementById('comments-' + pid);
+            if (sec) sec.classList.add('open');
+          }
+        } catch(e) { /* ignore */ } finally { btn.disabled = false; }
+      } else {
+        // Offline/mock
+        const existing = getPostComments(pid) !== null ? getPostComments(pid) : (post ? post.comments : []);
+        savePostComments(pid, [...existing, { username: cu.username, text, createdAt: new Date().toISOString() }]);
+        input.value = '';
+        btn.disabled = false;
+        loadAndRenderForum();
+        const sec = document.getElementById('comments-' + pid);
+        if (sec) sec.classList.add('open');
+      }
     });
   });
 
@@ -2544,15 +2762,61 @@ function renderForum() {
   });
 }
 
+/**
+ * Async forum loader. Tries real API first, falls back to mock data.
+ * For 'myvibe' tab uses /api/recommend (if authenticated).
+ */
+async function loadAndRenderForum() {
+  const feed = document.getElementById('forum-feed');
+  feed.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:3rem">Loading…</div>';
+  let posts = [];
+  try {
+    if (forumActiveTab === 'myvibe' && getToken()) {
+      const resp = await apiFetch('/recommend?limit=20');
+      if (resp.ok) {
+        const data = await resp.json();
+        posts = (data.posts || []).map(normalizePost);
+      }
+    }
+    if (posts.length === 0) {
+      const resp = await apiFetch('/posts?limit=20');
+      if (resp.ok) {
+        const data = await resp.json();
+        posts = (data.posts || []).map(normalizePost);
+      }
+    }
+  } catch(e) { /* API unreachable — use mock */ }
+
+  if (posts.length === 0) {
+    // Offline / cold-start: use local + mock
+    posts = getForumPosts();
+    if (forumActiveTab === 'myvibe') {
+      const fp = getUserFingerprint();
+      if (fp) {
+        posts = posts.slice().sort((a, b) =>
+          Math.hypot(a.pitchNorm - fp.pitchNorm, a.rhythmNorm - fp.rhythmNorm) -
+          Math.hypot(b.pitchNorm - fp.pitchNorm, b.rhythmNorm - fp.rhythmNorm)
+        );
+      }
+    }
+  } else {
+    // Prepend any locally-created posts (from localStorage) to API results
+    const localPosts = [];
+    try { localPosts.push(...JSON.parse(localStorage.getItem('resonance_posts') || '[]')); } catch(e) {}
+    posts = [...localPosts, ...posts];
+  }
+  renderForum(posts);
+}
+
 function openForum() {
   // Sync tab button state (forumActiveTab may have been changed previously)
   document.querySelectorAll('.forum-tab-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.forumTab === forumActiveTab);
   });
-  renderForum();
   const panel = document.getElementById('forum-panel');
   panel.classList.add('visible');
   panel.removeAttribute('aria-hidden');
+  loadAndRenderForum();
 }
 
 function closeForum() {
@@ -2571,7 +2835,7 @@ document.querySelectorAll('.forum-tab-btn').forEach(btn => {
     document.querySelectorAll('.forum-tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     forumActiveTab = btn.dataset.forumTab;
-    renderForum();
+    loadAndRenderForum();
   });
 });
 
@@ -2599,35 +2863,74 @@ function closeNewPostModal() {
 
 document.getElementById('btn-close-new-post').addEventListener('click', closeNewPostModal);
 
-document.getElementById('btn-submit-post').addEventListener('click', () => {
+document.getElementById('btn-submit-post').addEventListener('click', async () => {
   const user = getCurrentUser();
   if (!user) { closeNewPostModal(); openAuth(); return; }
   const title = document.getElementById('np-title').value.trim();
   const desc  = document.getElementById('np-desc').value.trim();
-  if (!title) { document.getElementById('new-post-error').textContent = 'Please enter a title.'; return; }
-  if (!desc)  { document.getElementById('new-post-error').textContent = 'Please add a description.'; return; }
+  const errEl = document.getElementById('new-post-error');
+  const btn   = document.getElementById('btn-submit-post');
+  if (!title) { errEl.textContent = 'Please enter a title.'; return; }
+  if (!desc)  { errEl.textContent = 'Please add a description.'; return; }
+
   const fp    = getUserFingerprint();
   const fpObj = fp ? getFingerprint(fp.pitchNorm, fp.rhythmNorm) : FINGERPRINTS[3];
-  const post  = {
-    id: Date.now().toString(36),
-    title, description: desc,
-    username:    user.username,
-    fingerprint: fp ? fp.fingerprint  : 'Still Waters',
-    community:   fpObj.community,
-    pitchNorm:   fp ? fp.pitchNorm    : 0.5,
-    rhythmNorm:  fp ? fp.rhythmNorm   : 0.5,
-    pitchLabel:  fp ? fp.pitchLabel   : 'Low',
-    rhythmLabel: fp ? fp.rhythmLabel  : 'Sparse',
-    createdAt: new Date().toISOString(),
-    likes: 0,
-    comments: [],
-  };
-  const real = [];
-  try { real.push(...JSON.parse(localStorage.getItem('resonance_posts') || '[]')); } catch(e) {}
-  real.unshift(post);
-  try { localStorage.setItem('resonance_posts', JSON.stringify(real)); } catch(e) {}
-  closeNewPostModal();
-  openForum();
+
+  btn.disabled = true; btn.textContent = 'Publishing…';
+  try {
+    if (getToken()) {
+      // Use real API with FormData
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', desc);
+      const moodSel = document.getElementById('np-mood');
+      const genre   = document.getElementById('np-genre');
+      if (moodSel && moodSel.value)  formData.append('moodTag',    moodSel.value);
+      if (genre   && genre.value)    formData.append('musicGenre', genre.value);
+      if (fp) formData.append('fingerprint', JSON.stringify({
+        label:     fp.fingerprint,
+        community: fpObj.community,
+        pitchNorm: fp.pitchNorm,
+        rhythmNorm: fp.rhythmNorm,
+        pitchLabel: fp.pitchLabel,
+        rhythmLabel: fp.rhythmLabel,
+      }));
+      formData.append('gameTags', JSON.stringify([]));
+      const audioFile = document.getElementById('np-audio');
+      if (audioFile && audioFile.files && audioFile.files[0]) {
+        formData.append('audio', audioFile.files[0]);
+      }
+      const resp = await apiFetch('/posts', { method: 'POST', body: formData });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        errEl.textContent = data.error || 'Post failed.';
+        return;
+      }
+    } else {
+      // Offline: save to localStorage
+      const post = {
+        id: Date.now().toString(36), title, description: desc,
+        username:    user.username,
+        fingerprint: fp ? fp.fingerprint  : 'Still Waters',
+        community:   fpObj.community,
+        pitchNorm:   fp ? fp.pitchNorm    : 0.5,
+        rhythmNorm:  fp ? fp.rhythmNorm   : 0.5,
+        pitchLabel:  fp ? fp.pitchLabel   : 'Low',
+        rhythmLabel: fp ? fp.rhythmLabel  : 'Sparse',
+        createdAt:   new Date().toISOString(),
+        likes: 0, comments: [],
+      };
+      const real = [];
+      try { real.push(...JSON.parse(localStorage.getItem('resonance_posts') || '[]')); } catch(e) {}
+      real.unshift(post);
+      try { localStorage.setItem('resonance_posts', JSON.stringify(real)); } catch(e) {}
+    }
+    closeNewPostModal();
+    forumActiveTab = 'all';
+    openForum();
+  } catch(e) {
+    errEl.textContent = 'Failed to publish. Please try again.';
+  } finally { btn.disabled = false; btn.textContent = 'Publish Post ›'; }
 });
 
 document.getElementById('btn-publish-forum').addEventListener('click', () => {
@@ -2821,6 +3124,96 @@ function getAmplitude() {
     waveAnimId = requestAnimationFrame(drawResultWave);
   };
 })();
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 4 — USER PROFILE PANEL
+   ══════════════════════════════════════════════════════════════════ */
+
+let _profileFollowingId = null;
+
+function closeProfile() {
+  const panel = document.getElementById('profile-panel');
+  panel.classList.remove('visible');
+  panel.setAttribute('aria-hidden', 'true');
+}
+
+async function openProfile(usernameOrId) {
+  const panel = document.getElementById('profile-panel');
+  panel.classList.add('visible');
+  panel.removeAttribute('aria-hidden');
+  document.getElementById('profile-error').textContent = '';
+  document.getElementById('profile-displayname').textContent = usernameOrId;
+  document.getElementById('profile-posts-list').innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;padding:1rem 0">Loading…</div>';
+  document.getElementById('profile-follow-row').style.display = 'none';
+
+  try {
+    const resp = await apiFetch('/users/' + encodeURIComponent(usernameOrId));
+    if (!resp.ok) { document.getElementById('profile-error').textContent = 'Profile not found.'; return; }
+    const data = await resp.json();
+    _profileFollowingId = data.id;
+
+    document.getElementById('profile-displayname').textContent = data.displayName || data.username;
+    document.getElementById('profile-username-sub').textContent = '@' + data.username +
+      ' · Joined ' + new Date(data.createdAt).toLocaleDateString();
+    document.getElementById('profile-bio').textContent = data.bio || '';
+    document.getElementById('profile-posts').textContent     = data.postCount    || 0;
+    document.getElementById('profile-followers').textContent = data.followerCount|| 0;
+    document.getElementById('profile-following').textContent = data.followingCount||0;
+
+    // Badges
+    const badgesEl = document.getElementById('profile-badges');
+    badgesEl.innerHTML = (data.userBadges || []).map(ub =>
+      '<span style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.4);border-radius:999px;padding:0.2rem 0.65rem;font-size:0.68rem;color:#c4b5fd">' +
+      escapeHtml(ub.badge?.name || '') + '</span>'
+    ).join('');
+
+    // Show follow button for other users
+    const cu = getCurrentUser();
+    if (cu && cu.id !== data.id && getToken()) {
+      const followRow = document.getElementById('profile-follow-row');
+      followRow.style.display = 'block';
+    }
+
+    // Recent posts
+    const postsEl = document.getElementById('profile-posts-list');
+    const userPosts = data.posts || [];
+    if (userPosts.length === 0) {
+      postsEl.innerHTML = '<div style="color:var(--text-dim);font-size:0.78rem">No posts yet.</div>';
+    } else {
+      postsEl.innerHTML = userPosts.slice(0, 10).map(p =>
+        '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;cursor:pointer" onclick="openForumAndHighlight(\'' + escapeHtml(p.id) + '\')">' +
+          '<div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">' + escapeHtml(p.title || '(untitled)') + '</div>' +
+          '<div style="font-size:0.7rem;color:var(--text-dim)">' + formatEntryDate(p.createdAt) + ' · ' +
+          '&#9825; ' + (p.likeCount || 0) + '</div>' +
+        '</div>'
+      ).join('');
+    }
+  } catch(e) {
+    document.getElementById('profile-error').textContent = 'Could not load profile (offline?).';
+    document.getElementById('profile-posts-list').innerHTML = '';
+  }
+}
+
+function openForumAndHighlight(postId) {
+  closeProfile();
+  openForum();
+}
+
+document.getElementById('btn-close-profile').addEventListener('click', closeProfile);
+
+document.getElementById('btn-profile-follow').addEventListener('click', async () => {
+  if (!_profileFollowingId || !getToken()) return;
+  const btn = document.getElementById('btn-profile-follow');
+  btn.disabled = true;
+  try {
+    const resp = await apiFetch('/users/' + _profileFollowingId + '/follow', { method: 'POST' });
+    if (resp.ok) {
+      const data = await resp.json();
+      btn.textContent = data.following ? 'Unfollow' : 'Follow';
+      btn.classList.toggle('btn-outline', !data.following);
+    }
+  } catch(e) { /* ignore */ } finally { btn.disabled = false; }
+});
 </script>
 </body>
 </html>
