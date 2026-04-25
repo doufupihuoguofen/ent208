@@ -350,13 +350,15 @@
       </div>
       <div class="login-right">
         <div class="login-logo">RESONANCE · ECHOPLAY</div>
-        <div class="login-title">Sign in</div>
-        <div class="login-subtitle">Access your echo identity</div>
+        <div class="login-title" id="lc-title">Sign in</div>
+        <div class="login-subtitle" id="lc-subtitle">Access your echo identity</div>
+        <div id="lc-error" style="display:none;background:rgba(255,80,100,0.12);border:1px solid rgba(255,80,100,0.3);border-radius:12px;padding:10px 16px;color:#ff8fa0;font-size:13px;margin-bottom:18px;"></div>
         <div class="input-group"><label class="input-label">Nickname</label><input class="input-field" type="text" id="lc-nickname" placeholder="echo@resonance.io" autocomplete="username"></div>
         <div class="input-group"><label class="input-label">Password</label><input class="input-field" type="password" id="lc-password" placeholder="········" autocomplete="current-password"><span class="toggle-password" id="lc-togglePwd"><i class="far fa-eye-slash" id="lc-eyeIcon"></i></span></div>
-        <div class="login-options"><label class="remember-label"><input type="checkbox"> Remember me</label><a href="#" class="forgot-link">Forgot password?</a></div>
+        <div class="input-group" id="lc-confirmGroup" style="display:none"><label class="input-label">Confirm Password</label><input class="input-field" type="password" id="lc-confirm" placeholder="········" autocomplete="new-password"></div>
+        <div class="login-options" id="lc-loginOptions"><label class="remember-label"><input type="checkbox" id="lc-remember"> Remember me</label><a href="#" class="forgot-link">Forgot password?</a></div>
         <button class="begin-btn" id="lc-beginBtn">Begin</button>
-        <div class="signup-area">New to Resonance? <a href="#" class="signup-link" id="lc-signupLink">Create an echo</a></div>
+        <div class="signup-area" id="lc-switchArea">New to Resonance? <a href="#" class="signup-link" id="lc-signupLink">Create an echo</a></div>
         <div class="login-footer"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Help</a></div>
       </div>
     </div>
@@ -378,7 +380,7 @@
           <div><div class="type-head" id="type-head"></div><p id="type-basis" class="muted"></p><div class="mix-player"><button id="replay-mix" class="primary-btn">Replay Mix</button><canvas id="mix-wave"></canvas></div></div>
           <div class="fortune-box"><h3 class="fortune-title">今日黄历</h3><div id="fortune-rating"></div><strong>宜</strong><ul id="fortune-dos" class="clean"></ul><strong>忌</strong><ul id="fortune-donts" class="clean"></ul><div id="fortune-lucky"></div></div>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px"><h3 style="margin:0">同频留言墙</h3><button id="view-history-btn" class="ghost-btn">历史足迹</button></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px"><h3 style="margin:0">同频留言墙</h3><div style="display:flex;gap:8px"><button id="retake-btn" class="ghost-btn">重测</button><button id="view-history-btn" class="ghost-btn">历史足迹</button></div></div>
         <div class="wall-post"><input id="wall-input" maxlength="30" placeholder="留下今天的状态（最多30字）"><button id="wall-send" class="primary-btn">发布</button></div>
         <div id="wall-list" class="wall-list"></div>
       </div>
@@ -590,7 +592,10 @@ function escapeHTML(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;
 function getTodayKey() { return 'resonance_'+new Date().toISOString().slice(0,10); }
 function euclideanDist(a,b) { return Math.sqrt(a.reduce((s,v,i)=>s+(v-b[i])**2,0)); }
 function quantizeToScale(midi, modeIdx, root=60) { const maxMode=Object.keys(SCALE_PATTERNS).length-1; const scale=SCALE_PATTERNS[Math.max(0,Math.min(maxMode,modeIdx|0))]||SCALE_PATTERNS[0]; const oct=Math.floor((midi-root)/12), pc=((midi-root)%12+12)%12; let best=scale[0], min=Infinity; scale.forEach(v=>{const d=Math.abs(v-pc); if(d<min){min=d;best=v;}}); return root+oct*12+best; }
-function saveUser(d){ try{ localStorage.setItem('resonance_user', JSON.stringify(d)); }catch(e){} }
+function saveAccounts(a){ try{ localStorage.setItem('resonance_accounts', JSON.stringify(a)); }catch(e){} }
+function loadAccounts(){ try{ return JSON.parse(localStorage.getItem('resonance_accounts'))||{}; }catch(e){ return {}; } }
+async function hashPwd(pwd){ const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwd)); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+
 function loadUser(){ try{ return JSON.parse(localStorage.getItem('resonance_user')); }catch(e){ return null; } }
 function saveTodayData(d){ try{ localStorage.setItem(getTodayKey(), JSON.stringify(d)); }catch(e){} }
 function loadTodayData(){ try{ return JSON.parse(localStorage.getItem(getTodayKey())); }catch(e){ return null; } }
@@ -621,7 +626,7 @@ function drawWaveform(analyser,canvas,stopAt){ const dpr=window.devicePixelRatio
 function renderVibeWall(typeId){ const type=TYPE_DB.find(t=>t.id===typeId)||TYPE_DB[6],listEl=document.getElementById('wall-list'),liked=JSON.parse(localStorage.getItem('resonance_wall_liked')||'{}'); const presets=[...type.messages_pool].sort((a,b)=>b.likes-a.likes).map((m,i)=>({...m,_id:'preset_'+i})),userMsgs=loadWall(typeId).map(m=>({...m,_id:m.id||('u'+Math.random())})),all=[...presets,...userMsgs].slice(0,50); listEl.innerHTML=''; all.forEach(m=>{ const row=document.createElement('div'); row.className='wall-item'; const left=document.createElement('div'); left.innerHTML=`<div>${escapeHTML(m.text)}</div><div class="wall-meta">${escapeHTML(m.uid)}</div>`; const right=document.createElement('button'); right.className='like-btn'+(liked[m._id]?' liked':''); right.innerHTML=`<i class="fas fa-heart"></i> ${m.likes+(liked[m._id]?1:0)}`; right.onclick=()=>{ liked[m._id]=!liked[m._id]; localStorage.setItem('resonance_wall_liked',JSON.stringify(liked)); renderVibeWall(typeId); }; row.append(left,right); listEl.appendChild(row); }); }
 function renderResultPage(type,config){ activeType=type; document.getElementById('test-card').style.display='none'; document.getElementById('result-card').style.display='block'; document.getElementById('type-head').innerHTML=`<i class="fas fa-wave-square"></i><div><div>${type.name.zh}</div><div class="muted" style="font-size:14px">${type.name.en} · ${type.code}</div></div>`; document.getElementById('type-basis').textContent=type.psychology_basis; document.getElementById('fortune-rating').textContent=type.daily_fortune.rating; document.getElementById('fortune-dos').innerHTML=type.daily_fortune.dos.map(v=>`<li>${escapeHTML(v)}</li>`).join(''); document.getElementById('fortune-donts').innerHTML=type.daily_fortune.donts.map(v=>`<li>${escapeHTML(v)}</li>`).join(''); document.getElementById('fortune-lucky').textContent=type.daily_fortune.lucky_activity; document.getElementById('replay-mix').onclick=()=>generateFinalMix(config); renderVibeWall(type.id); }
 function completeTest(){ cleanupStep(); clearTimer(); const vec=computePsychVector(sessionConfig),type=matchType(vec)||TYPE_DB[6]; const todayData={sessionConfig:JSON.parse(JSON.stringify(sessionConfig)),type,completed:true}; saveTodayData(todayData); const hist=loadHistory(); hist.unshift({date:new Date().toISOString().slice(0,10),typeId:type.id,summary:type.name.zh}); saveHistory(hist.slice(0,30)); generateFinalMix(sessionConfig); renderResultPage(type,sessionConfig); }
-function initTestView(){ document.getElementById('next-step').onclick=()=>nextStep(); document.getElementById('to-profile').onclick=()=>{showView('PROFILE'); initProfileView();}; document.getElementById('view-history-btn').onclick=()=>{showView('PROFILE'); initProfileView();}; document.getElementById('wall-send').onclick=()=>{ if(!activeType||!currentUser) return; const input=document.getElementById('wall-input'),t=escapeHTML(input.value.trim().slice(0,30)); if(!t) return; const arr=loadWall(activeType.id); const rand=window.crypto?.randomUUID?.().replace(/-/g,'').slice(0,4).toUpperCase()||Math.random().toString(16).slice(2,6).toUpperCase(); arr.unshift({id:'u_'+Date.now(),uid:'匿名#'+rand,text:t,likes:0}); saveWall(activeType.id,arr.slice(0,50)); input.value=''; renderVibeWall(activeType.id); }; }
+function initTestView(){ document.getElementById('next-step').onclick=()=>nextStep(); document.getElementById('to-profile').onclick=()=>{showView('PROFILE'); initProfileView();}; document.getElementById('view-history-btn').onclick=()=>{showView('PROFILE'); initProfileView();}; document.getElementById('retake-btn').onclick=()=>{ try{ localStorage.removeItem(getTodayKey()); }catch(e){} sessionConfig.rhythm={}; sessionConfig.harmony={}; sessionConfig.melody={}; sessionConfig.space={}; document.getElementById('result-card').style.display='none'; document.getElementById('test-card').style.display='block'; startStep(0); }; document.getElementById('wall-send').onclick=()=>{ if(!activeType||!currentUser) return; const input=document.getElementById('wall-input'),t=escapeHTML(input.value.trim().slice(0,30)); if(!t) return; const arr=loadWall(activeType.id); const rand=window.crypto?.randomUUID?.().replace(/-/g,'').slice(0,4).toUpperCase()||Math.random().toString(16).slice(2,6).toUpperCase(); arr.unshift({id:'u_'+Date.now(),uid:'匿名#'+rand,text:t,likes:0}); saveWall(activeType.id,arr.slice(0,50)); input.value=''; renderVibeWall(activeType.id); }; }
 function initProfileView(){
   const user=loadUser()||{};
   if(!loadUser()){ showView('LOGIN'); initLoginView(); return; }
@@ -797,7 +802,8 @@ function initLoginView(){
   if(loginViewDisposer) loginViewDisposer();
   const chars=['lc-char1','lc-char2','lc-char3'].map(id=>document.getElementById(id));
   const pupils=[{L:document.getElementById('lc-p1L'),R:document.getElementById('lc-p1R')},{L:document.getElementById('lc-p2L'),R:document.getElementById('lc-p2R')},{L:document.getElementById('lc-p3L'),R:document.getElementById('lc-p3R')}];
-  const pwdEl=document.getElementById('lc-password'),toggleEl=document.getElementById('lc-togglePwd'),eyeIcon=document.getElementById('lc-eyeIcon'),beginBtn=document.getElementById('lc-beginBtn'),nickEl=document.getElementById('lc-nickname'),signupEl=document.getElementById('lc-signupLink');
+  const pwdEl=document.getElementById('lc-password'),confirmEl=document.getElementById('lc-confirm'),toggleEl=document.getElementById('lc-togglePwd'),eyeIcon=document.getElementById('lc-eyeIcon'),beginBtn=document.getElementById('lc-beginBtn'),nickEl=document.getElementById('lc-nickname'),errEl=document.getElementById('lc-error'),titleEl=document.getElementById('lc-title'),subtitleEl=document.getElementById('lc-subtitle'),confirmGroup=document.getElementById('lc-confirmGroup'),loginOptions=document.getElementById('lc-loginOptions');
+  let isSignup=false;
   const target=[{x:0,y:0},{x:0,y:0},{x:0,y:0}],cur=[{x:0,y:0},{x:0,y:0},{x:0,y:0}];
   let lcRafId;
   function lcRaf(){ chars.forEach((c,i)=>{ cur[i].x+=(target[i].x-cur[i].x)*0.15; cur[i].y+=(target[i].y-cur[i].y)*0.15; if(c.classList.contains('avoiding')) return; const ex=c.classList.contains('peeking')?3.5:0, ey=c.classList.contains('peeking')?-1.5:0; pupils[i].L.style.transform=`translate(${cur[i].x+ex}px,${cur[i].y+ey}px)`; pupils[i].R.style.transform=`translate(${cur[i].x+ex}px,${cur[i].y+ey}px)`; }); lcRafId=requestAnimationFrame(lcRaf);}
@@ -809,10 +815,57 @@ function initLoginView(){
   function syncPose(){ const vis=pwdEl.type==='text'; chars.forEach(c=>{ c.classList.toggle('peeking',!vis); c.classList.toggle('avoiding',vis); }); eyeIcon.className=vis?'far fa-eye':'far fa-eye-slash'; }
   toggleEl.onclick=e=>{ e.preventDefault(); pwdEl.type=pwdEl.type==='password'?'text':'password'; syncPose(); };
   syncPose();
-  function doLogin(nickname){ const name=nickname.trim(); if(!name) return; if(!loadUser()){ const uid='UID_'+(window.crypto?.randomUUID?.().replace(/-/g,'').slice(0,8).toUpperCase()||Math.random().toString(36).slice(2,10).toUpperCase()); saveUser({uid,nickname:escapeHTML(name),avatar:'fa-user-astronaut',joinedAt:new Date().toISOString()}); } currentUser=loadUser(); dispose(); checkDailyReset(); showView('TEST'); const todayData=loadTodayData(); if(todayData&&todayData.completed) renderResultPage(todayData.type,todayData.sessionConfig); else { document.getElementById('result-card').style.display='none'; document.getElementById('test-card').style.display='block'; startStep(0); } }
-  beginBtn.onclick=()=>doLogin(nickEl.value);
-  nickEl.onkeydown=e=>{ if(e.key==='Enter') doLogin(nickEl.value); };
-  signupEl.onclick=e=>{ e.preventDefault(); doLogin(nickEl.value||'NewEcho'); };
+  function showErr(msg){ errEl.textContent=msg; errEl.style.display='block'; }
+  function hideErr(){ errEl.style.display='none'; }
+  function setMode(signup){
+    isSignup=signup; hideErr();
+    if(signup){
+      titleEl.textContent='Create Account'; subtitleEl.textContent='Start your echo journey';
+      confirmGroup.style.display=''; loginOptions.style.display='none'; beginBtn.textContent='Create Echo';
+      document.getElementById('lc-switchArea').innerHTML='Already have an account? <span style="color:#cfc3ff;cursor:pointer;font-weight:500" id="lc-switchBack">Sign in</span>';
+      document.getElementById('lc-switchBack').onclick=e=>{e.preventDefault();setMode(false);};
+    } else {
+      titleEl.textContent='Sign in'; subtitleEl.textContent='Access your echo identity';
+      confirmGroup.style.display='none'; loginOptions.style.display=''; beginBtn.textContent='Begin';
+      document.getElementById('lc-switchArea').innerHTML='New to Resonance? <a href="#" class="signup-link" id="lc-signupLink">Create an echo</a>';
+      document.getElementById('lc-signupLink').onclick=e=>{e.preventDefault();setMode(true);};
+    }
+  }
+  document.getElementById('lc-signupLink').onclick=e=>{e.preventDefault();setMode(true);};
+  function enterTest(user){ currentUser=user; dispose(); checkDailyReset(); showView('TEST'); const todayData=loadTodayData(); if(todayData&&todayData.completed){ Object.assign(sessionConfig,todayData.sessionConfig||{}); renderResultPage(todayData.type,todayData.sessionConfig); } else { document.getElementById('result-card').style.display='none'; document.getElementById('test-card').style.display='block'; startStep(0); } }
+  async function doSignIn(){
+    const name=nickEl.value.trim(), pwd=pwdEl.value;
+    if(!name){ showErr('Please enter your nickname.'); return; }
+    if(!pwd){ showErr('Please enter your password.'); return; }
+    const accounts=loadAccounts();
+    const acc=accounts[name.toLowerCase()];
+    if(!acc){ showErr('Account not found. Please sign up first.'); return; }
+    const hash=await hashPwd(pwd);
+    if(hash!==acc.pwdHash){ showErr('Incorrect password.'); return; }
+    saveUser(acc);
+    enterTest(acc);
+  }
+  async function doSignUp(){
+    const name=nickEl.value.trim(), pwd=pwdEl.value, conf=confirmEl.value;
+    if(!name){ showErr('Please enter a nickname.'); return; }
+    if(name.length<2){ showErr('Nickname must be at least 2 characters.'); return; }
+    if(!pwd){ showErr('Please enter a password.'); return; }
+    if(pwd.length<4){ showErr('Password must be at least 4 characters.'); return; }
+    if(pwd!==conf){ showErr('Passwords do not match.'); return; }
+    const accounts=loadAccounts();
+    if(accounts[name.toLowerCase()]){ showErr('Nickname already taken. Please choose another.'); return; }
+    const hash=await hashPwd(pwd);
+    const uid='UID_'+(window.crypto?.randomUUID?.().replace(/-/g,'').slice(0,8).toUpperCase()||Math.random().toString(36).slice(2,10).toUpperCase());
+    const newUser={uid,nickname:escapeHTML(name),avatar:'user-astronaut',joinedAt:new Date().toISOString(),pwdHash:hash};
+    accounts[name.toLowerCase()]=newUser;
+    saveAccounts(accounts);
+    saveUser(newUser);
+    enterTest(newUser);
+  }
+  beginBtn.onclick=()=>{ if(isSignup) doSignUp(); else doSignIn(); };
+  nickEl.onkeydown=e=>{ if(e.key==='Enter') pwdEl.focus(); };
+  pwdEl.onkeydown=e=>{ if(e.key==='Enter'){ if(isSignup) confirmEl.focus(); else doSignIn(); } };
+  confirmEl.onkeydown=e=>{ if(e.key==='Enter') doSignUp(); };
 }
 function init(){ checkDailyReset(); initTestView(); currentUser=loadUser(); if(!currentUser){ showView('LOGIN'); initLoginView(); } else { const todayData=loadTodayData(); showView('TEST'); if(todayData&&todayData.completed){ Object.assign(sessionConfig,todayData.sessionConfig||{}); renderResultPage(todayData.type,todayData.sessionConfig); } else { document.getElementById('result-card').style.display='none'; document.getElementById('test-card').style.display='block'; startStep(0); } } }
 document.addEventListener('DOMContentLoaded', init);
