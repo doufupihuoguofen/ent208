@@ -435,9 +435,9 @@ try { S.history = JSON.parse(localStorage.getItem('echoplay_v1') || '[]'); } cat
 
 /* ── UTILS ───────────────────────────────────────────────────────────── */
 const $  = id => document.getElementById(id);
-const clamp = (v,lo,hi) => Math.min(hi, Math.max(lo, v));
-const lerp  = (a,b,t) => a + (b-a) * t;
-const norm  = (v,lo,hi) => clamp((v-lo)/(hi-lo), 0, 1);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const lerp  = (a, b, t)  => a + (b - a) * t;
+const norm  = (v, lo, hi) => clamp((v - lo) / (hi - lo), 0, 1);
 
 /* ── AUDIO ENGINE ────────────────────────────────────────────────────── */
 function getACtx() {
@@ -674,8 +674,11 @@ function loadDim(idx) {
   canvas.width  = wrap.clientWidth  || 580;
   canvas.height = 260;
 
-  ({ energy:setupEnergy, valence:setupValence, complexity:setupComplexity,
-     tempo:setupTempo, space:setupSpace, depth:setupDepth, texture:setupTexture })[d.id](canvas, d);
+  const DIM_RENDERERS = {
+    energy: setupEnergy, valence: setupValence, complexity: setupComplexity,
+    tempo: setupTempo, space: setupSpace, depth: setupDepth, texture: setupTexture
+  };
+  DIM_RENDERERS[d.id](canvas, d);
 }
 
 function nextDim() {
@@ -1348,7 +1351,7 @@ function drawRadar(sc){
 function saveResult(){
   const entry = {
     id: Date.now(),
-    date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+    date: new Date().toLocaleDateString(navigator.language || 'en-GB', {day:'numeric',month:'short',year:'numeric'}),
     name: S.profile.name || 'Anonymous',
     mood: getMoodType(S.scores).name,
     scores: {...S.scores}
@@ -1370,7 +1373,7 @@ function renderHistory(){
     const item=document.createElement('div'); item.className='history-item fade-up';
     const bars=DIMS.map(d=>{
       const v=entry.scores[d.id]??50;
-      return `<div class="mini-bar" style="height:${Math.max(3,v*.28*1)}px;background:${d.color}66"></div>`;
+      return `<div class="mini-bar" style="height:${Math.max(3, v * 0.28)}px;background:${d.color}66"></div>`;
     }).join('');
     item.innerHTML=`
       <div class="history-item-top">
