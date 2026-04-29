@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resonance EchoPlay — 7-Dimension Sonic Mood Test</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* ── CSS VARIABLES ─────────────────────────────────── */
+    :root {
+      --bg-base: #0a0d12;
+      --bg-surface: #12161c;
+      --bg-card: rgba(18, 22, 28, 0.75);
+      --bg-deep: #0d1117;
+      --accent-primary: #7f6af0;
+      --accent-light: #b7a9ff;
+      --accent-hover: #d6caff;
+      --accent-btn: #d9d0ff;
+      --text-primary: #ececff;
+      --text-secondary: #b8c0d8;
+      --text-muted: #8592b0;
+      --text-dim: #6e7a9a;
+      --border-subtle: rgba(138, 110, 255, 0.12);
+      --border-mid: rgba(138, 110, 255, 0.25);
+      --border-active: #8f7aff;
+      --radius-card: 28px;
+      --radius-btn: 40px;
+      --blur-card: blur(12px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+    }
+
+    /* ── GLOW LINE ──────────────────────────────────────── */
+    .glow-line {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-primary), var(--accent-light), var(--accent-primary), transparent);
+      z-index: 50; pointer-events: none;
+    }
+
+    /* ── FLOATING PARTICLES ─────────────────────────────── */
+    .particle {
+      position: fixed; width: 2px; height: 2px;
+      background: rgba(180,150,255,0.4);
+      box-shadow: 0 0 6px rgba(180,150,255,0.6), 0 0 14px rgba(127,106,240,0.3);
+      border-radius: 50%; pointer-events: none; z-index: 1;
+    }
+    @keyframes fl1 { 0%,100%{transform:translateY(0) translateX(0)} 50%{transform:translateY(-30px) translateX(20px)} }
+    @keyframes fl2 { 0%,100%{transform:translateY(0) translateX(0)} 50%{transform:translateY(30px) translateX(-20px)} }
+    @keyframes fl3 { 0%,100%{transform:translateY(0) translateX(0)} 33%{transform:translateY(-20px) translateX(15px)} 66%{transform:translateY(10px) translateX(-10px)} }
+    @keyframes fl4 { 0%,100%{transform:translateY(0) translateX(0)} 50%{transform:translateY(-25px) translateX(-18px)} }
+    @keyframes fl5 { 0%,100%{transform:translateY(0) translateX(0)} 50%{transform:translateY(20px) translateX(20px)} }
+    @keyframes fl6 { 0%,100%{transform:translateY(0) translateX(0)} 50%{transform:translateY(-15px) translateX(-15px)} }
+
+    /* ── VIEW SYSTEM ────────────────────────────────────── */
+    .view {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 1.5rem;
+      opacity: 0; pointer-events: none;
+      transition: opacity .45s ease, transform .45s ease;
+      transform: translateY(24px);
+      z-index: 10; overflow-y: auto;
+    }
+    .view.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+    /* ── CARD ───────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: var(--blur-card);
+      -webkit-backdrop-filter: var(--blur-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-card);
+    }
+
+    /* ── BUTTONS ────────────────────────────────────────── */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: var(--accent-btn); color: #0b0e14; border: none;
+      border-radius: var(--radius-btn); font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      box-shadow: 0 8px 18px rgba(100,70,220,.2);
+      padding: .875rem 2.5rem; font-size: .8rem;
+      cursor: pointer; transition: all .2s ease; font-family: inherit;
+    }
+    .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 12px 28px rgba(100,70,220,.35); transform: translateY(-2px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: transparent; color: var(--text-secondary);
+      border: 1px solid var(--border-mid); border-radius: var(--radius-btn);
+      font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+      padding: .75rem 1.75rem; font-size: .75rem;
+      cursor: pointer; transition: all .2s ease; font-family: inherit;
+    }
+    .btn-secondary:hover { border-color: var(--border-active); color: var(--text-primary); }
+
+    /* ── INPUTS ─────────────────────────────────────────── */
+    .input-field {
+      background: #1a1f28; border: 1.5px solid #2a3140;
+      border-radius: 16px; color: var(--text-primary);
+      padding: .875rem 1.25rem; font-size: 1rem;
+      font-family: inherit; width: 100%;
+      outline: none; transition: all .2s ease; appearance: none;
+    }
+    .input-field:focus { border-color: var(--border-active); box-shadow: 0 0 0 3px rgba(120,90,255,.12); }
+    .input-field::placeholder { color: var(--text-dim); }
+    select.input-field option { background: #1a1f28; }
+
+    /* ── LANDING ────────────────────────────────────────── */
+    #landing-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+    .landing-content { position: relative; z-index: 2; text-align: center; max-width: 560px; }
+    .brand-tag {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: rgba(127,106,240,.12); border: 1px solid var(--border-mid);
+      border-radius: 100px; padding: .4rem 1rem;
+      font-size: .72rem; color: var(--accent-light);
+      letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 2rem;
+    }
+    .landing-title {
+      font-size: clamp(2.8rem, 9vw, 5.2rem); font-weight: 800;
+      line-height: 1.04; letter-spacing: -2px; margin-bottom: .5rem;
+    }
+    .landing-title span {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-light), var(--accent-hover));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .landing-sub {
+      font-size: .9rem; color: var(--accent-light);
+      letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.25rem;
+    }
+    .landing-desc { font-size: .95rem; color: var(--text-muted); line-height: 1.7; max-width: 420px; margin: 0 auto 2.5rem; }
+    .dim-chips { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
+    .dim-chip {
+      background: rgba(127,106,240,.1); border: 1px solid var(--border-subtle);
+      border-radius: 100px; padding: .3rem .8rem;
+      font-size: .68rem; color: var(--text-dim); letter-spacing: .5px; display: flex; align-items: center; gap: .35rem;
+    }
+
+    /* ── PROFILE ────────────────────────────────────────── */
+    .profile-card { max-width: 440px; width: 100%; padding: 2.5rem; }
+    .profile-hdr { text-align: center; margin-bottom: 2rem; }
+    .icon-circle {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(127,106,240,.15); border: 1px solid var(--border-mid);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem; font-size: 1.5rem; color: var(--accent-light);
+    }
+    .profile-hdr h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: .35rem; }
+    .profile-hdr p { color: var(--text-muted); font-size: .88rem; }
+    .input-group { margin-bottom: 1.25rem; }
+    .input-group label { display: block; font-size: .76rem; color: var(--text-secondary); letter-spacing: .5px; margin-bottom: .5rem; text-transform: uppercase; }
+    .input-group label span { color: var(--text-dim); font-size: .73rem; text-transform: none; letter-spacing: 0; }
+    .profile-actions { display: flex; flex-direction: column; gap: .75rem; align-items: center; margin-top: 2rem; }
+
+    /* ── TEST ───────────────────────────────────────────── */
+    .test-outer { width: 100%; max-width: 640px; }
+    .test-hdr-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+    .dim-dots { display: flex; gap: 6px; }
+    .dim-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(127,106,240,.2); transition: all .3s ease; }
+    .dim-dot.done { background: rgba(127,106,240,.45); }
+    .dim-dot.active { background: var(--accent-light); width: 24px; border-radius: 4px; box-shadow: 0 0 8px rgba(183,169,255,.5); }
+    .step-lbl { font-size: .78rem; color: var(--text-dim); letter-spacing: 1px; }
+    .test-card { padding: 1.75rem; }
+    .dim-hdr { display: flex; align-items: center; gap: 1rem; margin-bottom: .875rem; }
+    .dim-icon-wrap { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+    .dim-title h2 { font-size: 1.2rem; font-weight: 700; }
+    .dim-title p { font-size: .78rem; color: var(--text-muted); margin-top: 2px; }
+    .dim-instruction { font-size: .87rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6; }
+    .canvas-wrap { position: relative; border-radius: 18px; overflow: hidden; border: 1px solid var(--border-subtle); margin-bottom: .75rem; cursor: crosshair; background: var(--bg-deep); }
+    #test-canvas { display: block; width: 100%; }
+    .canvas-lbls { display: flex; justify-content: space-between; font-size: .73rem; color: var(--text-dim); padding: 0 .25rem; margin-bottom: 1.25rem; }
+    .test-ctrls { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+
+    /* ── RESULT ─────────────────────────────────────────── */
+    .result-outer { width: 100%; max-width: 800px; }
+    .result-hdr { text-align: center; margin-bottom: 1.75rem; }
+    .result-hdr .result-eyebrow { font-size: .75rem; color: var(--text-dim); letter-spacing: 3px; text-transform: uppercase; margin-bottom: .5rem; }
+    .result-hdr h2 { font-size: 1.85rem; font-weight: 800; letter-spacing: -.5px; }
+    .mood-badge {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: rgba(127,106,240,.15); border: 1px solid var(--border-mid);
+      border-radius: 100px; padding: .45rem 1.25rem;
+      font-size: .9rem; color: var(--accent-light); font-weight: 600; margin-top: .75rem;
+    }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem; }
+    @media (max-width: 600px) { .result-grid { grid-template-columns: 1fr; } }
+    .radar-card { padding: 1.5rem; display: flex; align-items: center; justify-content: center; }
+    #radar-canvas { max-width: 100%; display: block; }
+    .scores-card { padding: 1.5rem; }
+    .scores-card h3 { font-size: .72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 1.1rem; }
+    .score-bar-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .8rem; }
+    .sbl { font-size: .72rem; color: var(--text-muted); width: 78px; flex-shrink: 0; }
+    .sbtrack { flex: 1; height: 4px; background: rgba(255,255,255,.06); border-radius: 2px; overflow: hidden; }
+    .sbfill { height: 100%; border-radius: 2px; transition: width 1.2s cubic-bezier(.22,1,.36,1); }
+    .sbval { font-size: .72rem; color: var(--text-secondary); width: 28px; text-align: right; flex-shrink: 0; }
+    .mood-desc-box { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle); }
+    .mood-desc-box p { font-size: .83rem; color: var(--text-muted); line-height: 1.65; }
+    .result-actions { display: flex; justify-content: center; gap: .75rem; flex-wrap: wrap; }
+
+    /* ── HISTORY ────────────────────────────────────────── */
+    .history-outer { width: 100%; max-width: 580px; }
+    .history-top { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem; }
+    .history-top h2 { font-size: 1.4rem; font-weight: 700; }
+    .history-list { display: flex; flex-direction: column; gap: .875rem; max-height: calc(100vh - 200px); overflow-y: auto; padding-right: 4px; }
+    .history-item {
+      background: var(--bg-card); backdrop-filter: var(--blur-card);
+      border: 1px solid var(--border-subtle); border-radius: 18px;
+      padding: 1.25rem 1.5rem; cursor: pointer; transition: all .2s ease;
+    }
+    .history-item:hover { border-color: var(--border-mid); transform: translateY(-2px); }
+    .history-item-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; }
+    .hi-mood { font-weight: 600; color: var(--accent-light); font-size: .92rem; }
+    .hi-date { font-size: .72rem; color: var(--text-dim); }
+    .mini-bars { display: flex; gap: 5px; align-items: flex-end; height: 28px; }
+    .mini-bar { width: 18px; border-radius: 3px 3px 0 0; background: rgba(127,106,240,.4); min-height: 3px; }
+    .history-empty { text-align: center; padding: 3rem 2rem; color: var(--text-dim); }
+    .history-empty i { font-size: 2.5rem; display: block; margin-bottom: 1rem; opacity: .35; }
+    .history-empty p { font-size: .9rem; line-height: 1.6; }
+
+    /* ── MISC ANIMATIONS ────────────────────────────────── */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .fade-up { animation: fadeUp .45s ease forwards; }
+    @keyframes pulse-out { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(2.5);opacity:0} }
+
+    /* ── SCROLLBAR ──────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Glow line -->
+<div class="glow-line"></div>
+
+<!-- Floating particles (7) -->
+<div class="particle" style="top:11%;left:6%;animation:fl1 15s ease-in-out infinite;animation-delay:-2s"></div>
+<div class="particle" style="top:73%;left:92%;animation:fl2 18s ease-in-out infinite;animation-delay:-5s"></div>
+<div class="particle" style="top:48%;left:4%;animation:fl3 12s ease-in-out infinite;animation-delay:-8s"></div>
+<div class="particle" style="top:83%;left:21%;animation:fl4 20s ease-in-out infinite;animation-delay:-3s"></div>
+<div class="particle" style="top:21%;left:81%;animation:fl5 16s ease-in-out infinite;animation-delay:-10s"></div>
+<div class="particle" style="top:59%;left:69%;animation:fl6 14s ease-in-out infinite;animation-delay:-7s"></div>
+<div class="particle" style="top:36%;left:52%;animation:fl1 17s ease-in-out infinite;animation-delay:-4s"></div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!--  VIEW: LANDING                                          -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="view-landing" class="view active">
+  <canvas id="landing-canvas"></canvas>
+  <div class="landing-content">
+    <div class="brand-tag"><i class="fa-solid fa-headphones-simple"></i> Sonic Intelligence Lab</div>
+    <h1 class="landing-title">Resonance<br><span>EchoPlay</span></h1>
+    <p class="landing-sub">7-Dimension Sonic Mood Test</p>
+    <p class="landing-desc">Discover your unique sonic fingerprint through immersive audio interactions. A five-minute journey into your inner soundscape.</p>
+    <button class="btn-primary" onclick="nav('profile')"><i class="fa-solid fa-play"></i> Begin Journey</button>
+    <div class="dim-chips">
+      <span class="dim-chip"><i class="fa-solid fa-bolt"></i> Energy</span>
+      <span class="dim-chip"><i class="fa-solid fa-yin-yang"></i> Valence</span>
+      <span class="dim-chip"><i class="fa-solid fa-layer-group"></i> Complexity</span>
+      <span class="dim-chip"><i class="fa-solid fa-drum"></i> Tempo</span>
+      <span class="dim-chip"><i class="fa-solid fa-circle-nodes"></i> Space</span>
+      <span class="dim-chip"><i class="fa-solid fa-water"></i> Depth</span>
+      <span class="dim-chip"><i class="fa-solid fa-wave-square"></i> Texture</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!--  VIEW: PROFILE                                          -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="view-profile" class="view">
+  <div class="card profile-card">
+    <div class="profile-hdr">
+      <div class="icon-circle"><i class="fa-solid fa-user-astronaut"></i></div>
+      <h2>Your Profile</h2>
+      <p>Optional — helps personalise your sonic map</p>
+    </div>
+    <div class="input-group">
+      <label>Name <span>(optional)</span></label>
+      <input type="text" id="profile-name" class="input-field" placeholder="Enter your name…">
+    </div>
+    <div class="input-group">
+      <label>Age Range</label>
+      <select id="profile-age" class="input-field">
+        <option value="">Prefer not to say</option>
+        <option value="under18">Under 18</option>
+        <option value="18-24">18–24</option>
+        <option value="25-34">25–34</option>
+        <option value="35-44">35–44</option>
+        <option value="45+">45+</option>
+      </select>
+    </div>
+    <div class="profile-actions">
+      <button class="btn-primary" onclick="startTest()">Start Test <i class="fa-solid fa-arrow-right"></i></button>
+      <button class="btn-secondary" onclick="nav('landing')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!--  VIEW: TEST                                             -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="view-test" class="view">
+  <div class="test-outer">
+    <div class="test-hdr-bar">
+      <div class="dim-dots" id="dim-dots"></div>
+      <span class="step-lbl">Step <span id="step-cur">1</span> of 7</span>
+    </div>
+    <div class="card test-card">
+      <div class="dim-hdr">
+        <div class="dim-icon-wrap" id="dim-icon-wrap"><i id="dim-icon-i" class="fa-solid fa-bolt"></i></div>
+        <div class="dim-title">
+          <h2 id="dim-name">Energy Level</h2>
+          <p id="dim-sub">From stillness to intensity</p>
+        </div>
+      </div>
+      <p class="dim-instruction" id="dim-instr"></p>
+      <div class="canvas-wrap" id="canvas-wrap"><canvas id="test-canvas"></canvas></div>
+      <div class="canvas-lbls"><span id="lbl-l">Calm</span><span id="lbl-r">Energetic</span></div>
+      <div class="test-ctrls">
+        <button class="btn-secondary" id="audio-btn" onclick="toggleDimAudio()">
+          <i class="fa-solid fa-volume-high" id="audio-icon"></i><span id="audio-txt">Play Sound</span>
+        </button>
+        <button class="btn-primary" onclick="nextDim()">
+          <span id="next-lbl">Next</span> <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!--  VIEW: RESULT                                           -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="view-result" class="view">
+  <div class="result-outer">
+    <div class="result-hdr">
+      <p class="result-eyebrow">Your Sonic Profile</p>
+      <h2 id="result-name">Analysis Complete</h2>
+      <div class="mood-badge"><i class="fa-solid fa-star"></i><span id="mood-type-txt">Resonant Heart</span></div>
+    </div>
+    <div class="result-grid">
+      <div class="card radar-card"><canvas id="radar-canvas" width="300" height="300"></canvas></div>
+      <div class="card scores-card">
+        <h3>Dimension Scores</h3>
+        <div id="score-bars"></div>
+        <div class="mood-desc-box"><p id="mood-desc"></p></div>
+      </div>
+    </div>
+    <div class="result-actions">
+      <button class="btn-primary" onclick="saveResult()"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button>
+      <button class="btn-secondary" onclick="startTest()"><i class="fa-solid fa-rotate-right"></i> Retake</button>
+      <button class="btn-secondary" onclick="nav('history')"><i class="fa-solid fa-clock-rotate-left"></i> History</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!--  VIEW: HISTORY                                          -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div id="view-history" class="view">
+  <div class="history-outer">
+    <div class="history-top">
+      <button class="btn-secondary" onclick="nav('landing')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h2>Your Journey</h2>
+    </div>
+    <div id="history-list" class="history-list"></div>
+    <div id="history-empty" class="history-empty">
+      <i class="fa-solid fa-clock-rotate-left"></i>
+      <p>No saved profiles yet.<br>Complete a test to see your history here.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ── DIMENSIONS CONFIG ───────────────────────────────────────────────── */
+const DIMS = [
+  { id:'energy',     name:'Energy Level',       sub:'From stillness to intensity',
+    icon:'fa-solid fa-bolt',          color:'#ff6b9d', bg:'rgba(255,107,157,.08)',
+    instr:'Drag the orb left or right to find the energy that resonates with you. The audio tracks your movement.',
+    lL:'Calm', lR:'Energetic', def:50 },
+  { id:'valence',    name:'Emotional Tone',      sub:'Light and shadow within',
+    icon:'fa-solid fa-yin-yang',      color:'#ffd93d', bg:'rgba(255,217,61,.06)',
+    instr:'Click anywhere on the canvas. The left zone is shadowed, the right is radiant. Let your instincts decide.',
+    lL:'Shadowed', lR:'Radiant', def:50 },
+  { id:'complexity', name:'Sonic Complexity',    sub:'Layers of harmonic depth',
+    icon:'fa-solid fa-layer-group',   color:'#6bcb77', bg:'rgba(107,203,119,.06)',
+    instr:'Drag the handle up or down to add or remove harmonic layers. Find the richness that feels most like you.',
+    lL:'Pure', lR:'Complex', def:50 },
+  { id:'tempo',      name:'Temporal Flow',       sub:'The rhythm of your inner world',
+    icon:'fa-solid fa-drum',          color:'#ffa552', bg:'rgba(255,165,82,.06)',
+    instr:'Tap the glowing circle repeatedly to set your natural rhythm. The system learns your pace.',
+    lL:'Slow (40 BPM)', lR:'Fast (200 BPM)', def:50 },
+  { id:'space',      name:'Spatial Dimension',   sub:'Your place in the sonic field',
+    icon:'fa-solid fa-circle-nodes',  color:'#a29bfe', bg:'rgba(162,155,254,.06)',
+    instr:'Drag the cursor around the grid. Left–right controls pan, up–down controls distance and reverb.',
+    lL:'Intimate', lR:'Expansive', def:50 },
+  { id:'depth',      name:'Bass Resonance',      sub:'The frequency of your foundation',
+    icon:'fa-solid fa-water',         color:'#00cec9', bg:'rgba(0,206,201,.06)',
+    instr:'Drag up or down to tune the bass resonance. Find the low-end weight that feels most grounding.',
+    lL:'Light', lR:'Deep', def:50 },
+  { id:'texture',    name:'Sonic Texture',       sub:'The surface quality of your sound',
+    icon:'fa-solid fa-wave-square',   color:'#fd79a8', bg:'rgba(253,121,168,.06)',
+    instr:'Click a wave shape. Listen, then choose the texture that most closely matches your inner state.',
+    lL:'Smooth', lR:'Raw', def:0 }
+];
+
+/* ── STATE ───────────────────────────────────────────────────────────── */
+const S = {
+  view: 'landing',
+  profile: { name:'', age:'' },
+  scores: {},
+  dimIdx: 0,
+  history: [],
+  audioCtx: null,
+  audioNodes: [],
+  audioPlaying: false,
+  animId: null,
+  dimCleanup: null,
+  tapTimes: [],
+  textureChoice: 0
+};
+try { S.history = JSON.parse(localStorage.getItem('echoplay_v1') || '[]'); } catch(_){ S.history = []; }
+
+/* ── UTILS ───────────────────────────────────────────────────────────── */
+const $  = id => document.getElementById(id);
+const clamp = (v,lo,hi) => Math.min(hi, Math.max(lo, v));
+const lerp  = (a,b,t) => a + (b-a) * t;
+const norm  = (v,lo,hi) => clamp((v-lo)/(hi-lo), 0, 1);
+
+/* ── AUDIO ENGINE ────────────────────────────────────────────────────── */
+function getACtx() {
+  if (!S.audioCtx) S.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (S.audioCtx.state === 'suspended') S.audioCtx.resume();
+  return S.audioCtx;
+}
+function stopAudio() {
+  S.audioNodes.forEach(n => { try { n.stop(); } catch(_){} try { n.disconnect(); } catch(_){} });
+  S.audioNodes = [];
+  S.audioPlaying = false;
+  updateAudioBtn(false);
+}
+function updateAudioBtn(on) {
+  const ic = $('audio-icon'), tx = $('audio-txt');
+  if (ic) ic.className = on ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+  if (tx) tx.textContent = on ? 'Stop Sound' : 'Play Sound';
+}
+
+function playEnergyAudio(score) {
+  const ac = getACtx(); stopAudio();
+  const freq = lerp(200, 880, score/100);
+  const vol  = lerp(0.05, 0.18, score/100);
+  const osc = ac.createOscillator(), gn = ac.createGain(), flt = ac.createBiquadFilter();
+  osc.type = 'sine'; osc.frequency.value = freq;
+  flt.type = 'bandpass'; flt.frequency.value = freq * 1.8; flt.Q.value = 2;
+  gn.gain.setValueAtTime(0, ac.currentTime);
+  gn.gain.linearRampToValueAtTime(vol, ac.currentTime + 0.12);
+  osc.connect(flt); flt.connect(gn); gn.connect(ac.destination); osc.start();
+  if (score > 55) {
+    const lfo = ac.createOscillator(), lg = ac.createGain();
+    lfo.frequency.value = lerp(2, 14, (score-55)/45);
+    lg.gain.value = lerp(0, 0.05, (score-55)/45);
+    lfo.connect(lg); lg.connect(gn.gain); lfo.start();
+    S.audioNodes.push(lfo, lg);
+  }
+  S.audioNodes.push(osc, gn, flt);
+  S.audioPlaying = true; updateAudioBtn(true);
+}
+
+function playValenceAudio(score) {
+  const ac = getACtx(); stopAudio();
+  const root = 220;
+  const third = score >= 50 ? root * Math.pow(2, 4/12) : root * Math.pow(2, 3/12);
+  const fifth = root * Math.pow(2, 7/12);
+  [root, third, fifth].forEach(f => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0, ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.06, ac.currentTime + 0.2);
+    o.connect(g); g.connect(ac.destination); o.start();
+    S.audioNodes.push(o, g);
+  });
+  S.audioPlaying = true; updateAudioBtn(true);
+}
+
+function playComplexityAudio(score) {
+  const ac = getACtx(); stopAudio();
+  const n = Math.max(1, Math.round(lerp(1, 8, score/100)));
+  for (let i = 1; i <= n; i++) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = 220 * i;
+    g.gain.setValueAtTime(0, ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.08/i, ac.currentTime + 0.15);
+    o.connect(g); g.connect(ac.destination); o.start();
+    S.audioNodes.push(o, g);
+  }
+  S.audioPlaying = true; updateAudioBtn(true);
+}
+
+function playSpaceAudio(panVal, depthVal) {
+  const ac = getACtx(); stopAudio();
+  const pan = ac.createStereoPanner();
+  const dly = ac.createDelay(2), dlg = ac.createGain(), fbg = ac.createGain();
+  const osc = ac.createOscillator(), gn = ac.createGain();
+  pan.pan.value = clamp(panVal * 2 - 1, -1, 1);
+  dly.delayTime.value = lerp(0.05, 0.55, depthVal);
+  dlg.gain.value = lerp(0.08, 0.38, depthVal);
+  fbg.gain.value = lerp(0.1, 0.48, depthVal);
+  osc.type = 'sine'; osc.frequency.value = 440;
+  gn.gain.setValueAtTime(0, ac.currentTime);
+  gn.gain.linearRampToValueAtTime(0.1, ac.currentTime + 0.1);
+  osc.connect(gn); gn.connect(pan); pan.connect(ac.destination);
+  pan.connect(dly); dly.connect(dlg); dlg.connect(ac.destination);
+  dlg.connect(fbg); fbg.connect(dly); osc.start();
+  S.audioNodes.push(osc, gn, pan, dly, dlg, fbg);
+  S.audioPlaying = true; updateAudioBtn(true);
+}
+
+function playDepthAudio(score) {
+  const ac = getACtx(); stopAudio();
+  const freq = lerp(38, 200, score/100);
+  const osc = ac.createOscillator(), gn = ac.createGain(), flt = ac.createBiquadFilter();
+  osc.type = 'sine'; osc.frequency.value = freq;
+  flt.type = 'lowpass'; flt.frequency.value = 350;
+  gn.gain.setValueAtTime(0, ac.currentTime);
+  gn.gain.linearRampToValueAtTime(0.28, ac.currentTime + 0.12);
+  osc.connect(flt); flt.connect(gn); gn.connect(ac.destination); osc.start();
+  S.audioNodes.push(osc, gn, flt);
+  S.audioPlaying = true; updateAudioBtn(true);
+}
+
+const WAVE_TYPES = ['sine','triangle','sawtooth','square'];
+function playTextureAudio(idx) {
+  const ac = getACtx(); stopAudio();
+  const osc = ac.createOscillator(), gn = ac.createGain(), flt = ac.createBiquadFilter();
+  osc.type = WAVE_TYPES[idx]; osc.frequency.value = 220;
+  flt.type = 'lowpass'; flt.frequency.value = idx < 2 ? 6000 : 1400;
+  gn.gain.setValueAtTime(0, ac.currentTime);
+  gn.gain.linearRampToValueAtTime(0.12, ac.currentTime + 0.1);
+  osc.connect(flt); flt.connect(gn); gn.connect(ac.destination); osc.start();
+  S.audioNodes.push(osc, gn, flt);
+  S.audioPlaying = true; updateAudioBtn(true);
+}
+
+function clickTone(freq) {
+  const ac = getACtx();
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'sine'; o.frequency.value = freq || 660;
+  g.gain.setValueAtTime(0.15, ac.currentTime);
+  g.gain.setTargetAtTime(0, ac.currentTime + 0.04, 0.018);
+  o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.12);
+}
+
+function toggleDimAudio() {
+  if (S.audioPlaying) { stopAudio(); return; }
+  const d = DIMS[S.dimIdx];
+  const sc = S.scores[d.id] ?? d.def;
+  if (d.id === 'energy')     playEnergyAudio(sc);
+  else if (d.id === 'valence')    playValenceAudio(sc);
+  else if (d.id === 'complexity') playComplexityAudio(sc);
+  else if (d.id === 'space')      playSpaceAudio(sc/100, 0.5);
+  else if (d.id === 'depth')      playDepthAudio(sc);
+  else if (d.id === 'texture')    playTextureAudio(S.textureChoice);
+  else updateAudioBtn(false);
+}
+
+/* ── NAVIGATION ──────────────────────────────────────────────────────── */
+function nav(viewId) {
+  stopAudio();
+  if (S.animId) { cancelAnimationFrame(S.animId); S.animId = null; }
+  if (S.dimCleanup) { S.dimCleanup(); S.dimCleanup = null; }
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = $('view-' + viewId);
+  if (el) el.classList.add('active');
+  S.view = viewId;
+  if (viewId === 'landing') initLandingCanvas();
+  if (viewId === 'result')  renderResult();
+  if (viewId === 'history') renderHistory();
+}
+
+/* ── LANDING CANVAS ──────────────────────────────────────────────────── */
+function initLandingCanvas() {
+  const canvas = $('landing-canvas');
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width = canvas.offsetWidth || window.innerWidth; canvas.height = canvas.offsetHeight || window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const waves = [
+    { f:0.0024, a:38, yR:.38, c:'rgba(127,106,240,.18)', lw:2 },
+    { f:0.0042, a:22, yR:.50, c:'rgba(183,169,255,.11)', lw:1.5 },
+    { f:0.0017, a:46, yR:.62, c:'rgba(127,106,240,.07)', lw:1.5 },
+    { f:0.006,  a:12, yR:.44, c:'rgba(100,80,220,.10)',  lw:1 }
+  ];
+  const orbs = Array.from({length:6}, () => ({
+    x: Math.random()*.8+.1, y: Math.random()*.6+.2,
+    r: Math.random()*60+30, ph: Math.random()*Math.PI*2,
+    sp: Math.random()*.003+.001
+  }));
+  let t = 0;
+
+  function draw() {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    orbs.forEach(o => {
+      const x = o.x*W + Math.sin(t*o.sp+o.ph)*40;
+      const y = o.y*H + Math.cos(t*o.sp*.7+o.ph)*28;
+      const gr = ctx.createRadialGradient(x,y,0,x,y,o.r);
+      gr.addColorStop(0,'rgba(127,106,240,.06)'); gr.addColorStop(1,'rgba(127,106,240,0)');
+      ctx.beginPath(); ctx.arc(x,y,o.r,0,Math.PI*2); ctx.fillStyle = gr; ctx.fill();
+    });
+    waves.forEach(w => {
+      ctx.beginPath(); ctx.strokeStyle = w.c; ctx.lineWidth = w.lw;
+      const by = H * w.yR;
+      for (let x = 0; x <= W; x += 3) {
+        const y = by + Math.sin((x/W*5 + t)*w.f*W) * w.a;
+        x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    });
+    t += 0.02;
+    S.animId = requestAnimationFrame(draw);
+  }
+  draw();
+  S.dimCleanup = () => window.removeEventListener('resize', resize);
+}
+
+/* ── TEST FLOW ───────────────────────────────────────────────────────── */
+function startTest() {
+  S.profile.name = $('profile-name').value.trim();
+  S.profile.age  = $('profile-age').value;
+  S.scores = {}; S.dimIdx = 0; S.tapTimes = []; S.textureChoice = 0;
+  $('dim-dots').innerHTML = DIMS.map((_,i) => `<div class="dim-dot" id="dot-${i}"></div>`).join('');
+  nav('test');
+  loadDim(0);
+}
+
+function loadDim(idx) {
+  S.dimIdx = idx;
+  const d = DIMS[idx];
+
+  DIMS.forEach((_,i) => {
+    const dot = $(`dot-${i}`);
+    if (!dot) return;
+    dot.className = 'dim-dot' + (i < idx ? ' done' : i === idx ? ' active' : '');
+  });
+
+  $('step-cur').textContent = idx + 1;
+  const iw = $('dim-icon-wrap');
+  iw.style.background = d.bg; iw.style.color = d.color; iw.style.border = `1px solid ${d.color}44`;
+  $('dim-icon-i').className = d.icon;
+  $('dim-name').textContent = d.name; $('dim-sub').textContent = d.sub;
+  $('dim-instr').textContent = d.instr;
+  $('lbl-l').textContent = d.lL; $('lbl-r').textContent = d.lR;
+  $('next-lbl').textContent = idx === 6 ? 'See Results' : 'Next';
+
+  stopAudio();
+  if (S.animId) { cancelAnimationFrame(S.animId); S.animId = null; }
+  if (S.dimCleanup) { S.dimCleanup(); S.dimCleanup = null; }
+
+  const canvas = $('test-canvas');
+  const wrap   = $('canvas-wrap');
+  canvas.width  = wrap.clientWidth  || 580;
+  canvas.height = 260;
+
+  ({ energy:setupEnergy, valence:setupValence, complexity:setupComplexity,
+     tempo:setupTempo, space:setupSpace, depth:setupDepth, texture:setupTexture })[d.id](canvas, d);
+}
+
+function nextDim() {
+  const d = DIMS[S.dimIdx];
+  if (S.scores[d.id] === undefined) S.scores[d.id] = d.def;
+  if (S.dimIdx + 1 >= DIMS.length) nav('result');
+  else loadDim(S.dimIdx + 1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CANVAS RENDERERS (one per dimension)
+   Each calls: S.scores[id] = value   and   S.animId / S.dimCleanup
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. ENERGY ───────────────────────────────────────────────────────── */
+function setupEnergy(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  let score = S.scores['energy'] ?? 50;
+  let dragging = false, ripples = [], lastAudioScore = -999;
+
+  function orbX() { return W*.1 + (score/100)*W*.8; }
+
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    const bg = ctx.createLinearGradient(0,0,W,0);
+    bg.addColorStop(0,'rgba(80,120,220,.07)');
+    bg.addColorStop(score/100,'rgba(255,107,157,.14)');
+    bg.addColorStop(1,'rgba(255,70,40,.08)');
+    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+    // Wave lines (energy-responsive)
+    const waves = Math.floor(score/25)+1;
+    const now = Date.now()*.003;
+    for (let w = 0; w < waves; w++) {
+      const amp = lerp(4,22,score/100)/(w+1);
+      ctx.beginPath(); ctx.strokeStyle = `rgba(255,107,157,${.12-.01*w})`; ctx.lineWidth = 1;
+      for (let x = 0; x <= W; x+=2) {
+        const y = H*.35+w*H*.12 + Math.sin(x*.03+now+w)*amp;
+        x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+
+    // Track
+    const ty = H/2;
+    ctx.beginPath(); ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 2;
+    ctx.moveTo(W*.1,ty); ctx.lineTo(W*.9,ty); ctx.stroke();
+    const tg = ctx.createLinearGradient(0,0,W,0);
+    tg.addColorStop(0,'rgba(80,130,240,.5)'); tg.addColorStop(1,'rgba(255,107,157,.7)');
+    ctx.beginPath(); ctx.strokeStyle = tg; ctx.lineWidth = 2;
+    ctx.moveTo(W*.1,ty); ctx.lineTo(orbX(),ty); ctx.stroke();
+
+    // Ripples
+    ripples = ripples.filter(r=>r.a>0);
+    ripples.forEach(r => {
+      ctx.beginPath(); ctx.arc(r.x,ty,r.r,0,Math.PI*2);
+      ctx.strokeStyle = `rgba(255,107,157,${r.a})`; ctx.lineWidth = 1.5; ctx.stroke();
+      r.r += 2.2*(1+score/100); r.a -= .018;
+    });
+
+    // Orb glow
+    const ox = orbX(), pulse = 1+Math.sin(Date.now()*.004)*.07*(score/100);
+    const or = 20*pulse;
+    const R = Math.round(lerp(100,255,score/100));
+    const G = Math.round(lerp(149,107,score/100));
+    const B = Math.round(lerp(237,157,score/100));
+    const gg = ctx.createRadialGradient(ox,ty,0,ox,ty,or*2.5);
+    gg.addColorStop(0,`rgba(${R},${G},${B},.35)`); gg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.arc(ox,ty,or*2.5,0,Math.PI*2); ctx.fillStyle=gg; ctx.fill();
+    const og = ctx.createRadialGradient(ox-or*.3,ty-or*.3,0,ox,ty,or);
+    og.addColorStop(0,`rgba(${Math.min(255,R+50)},${Math.min(255,G+50)},${Math.min(255,B+50)},.95)`);
+    og.addColorStop(1,`rgba(${R},${G},${B},.85)`);
+    ctx.beginPath(); ctx.arc(ox,ty,or,0,Math.PI*2); ctx.fillStyle=og; ctx.fill();
+
+    S.animId = requestAnimationFrame(draw);
+  }
+
+  function setScore(x) {
+    score = clamp(Math.round(norm(x,W*.1,W*.9)*100),0,100);
+    S.scores['energy'] = score;
+    if (Math.abs(score-lastAudioScore) > 4) {
+      if (S.audioPlaying) playEnergyAudio(score);
+      lastAudioScore = score;
+      ripples.push({x:orbX(),r:4,a:.65});
+    }
+  }
+
+  function onDown(e){ dragging=true; const {x}=xy(e,canvas,W,H); setScore(x); }
+  function onMove(e){ if(!dragging)return; e.preventDefault(); const {x}=xy(e,canvas,W,H); setScore(x); }
+  function onUp(){ dragging=false; }
+
+  canvas.addEventListener('mousedown',onDown);
+  canvas.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  canvas.addEventListener('touchstart',onDown,{passive:true});
+  canvas.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onUp);
+  draw();
+  S.dimCleanup = () => { document.removeEventListener('mouseup',onUp); document.removeEventListener('touchend',onUp); };
+}
+
+/* ── 2. VALENCE ──────────────────────────────────────────────────────── */
+function setupValence(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  let marks = [], hx=-1, hy=-1;
+
+  function calcScore(){
+    if(!marks.length) return 50;
+    return Math.round(marks.reduce((a,m)=>a+m.z,0)/marks.length*100);
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const bg = ctx.createLinearGradient(0,0,W,0);
+    bg.addColorStop(0,'rgba(60,30,110,.45)');
+    bg.addColorStop(.45,'rgba(90,55,160,.08)');
+    bg.addColorStop(.55,'rgba(200,155,40,.08)');
+    bg.addColorStop(1,'rgba(220,175,45,.38)');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+    // Divider
+    ctx.beginPath(); ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
+    ctx.setLineDash([5,8]); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke(); ctx.setLineDash([]);
+
+    // Zone labels
+    ctx.font='11px Inter,sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='rgba(180,140,255,.3)'; ctx.fillText('Shadowed',W*.25,22);
+    ctx.fillStyle='rgba(255,210,90,.3)'; ctx.fillText('Radiant',W*.75,22);
+
+    // Hover
+    if(hx>=0){
+      ctx.beginPath(); ctx.arc(hx,hy,14,0,Math.PI*2);
+      ctx.strokeStyle = hx<W/2 ? 'rgba(180,140,255,.4)':'rgba(255,210,90,.4)';
+      ctx.lineWidth=1.5; ctx.stroke();
+    }
+
+    // Marks
+    marks.forEach((m,i)=>{
+      const age=marks.length-i, al=Math.max(.18,1-age*.07);
+      ctx.beginPath(); ctx.arc(m.x,m.y,4+age*2.5,0,Math.PI*2);
+      ctx.strokeStyle=m.z>.5?`rgba(255,210,90,${al*.35})`:`rgba(180,140,255,${al*.35})`;
+      ctx.lineWidth=1; ctx.stroke();
+      ctx.beginPath(); ctx.arc(m.x,m.y,5,0,Math.PI*2);
+      ctx.fillStyle=m.z>.5?`rgba(255,210,90,${al})`:`rgba(180,140,255,${al})`; ctx.fill();
+    });
+
+    S.animId = requestAnimationFrame(draw);
+  }
+
+  function onClick(e){
+    e.preventDefault();
+    const {x,y}=xy(e,canvas,W,H);
+    marks.push({x,y,z:x/W});
+    if(marks.length>16) marks.shift();
+    S.scores['valence']=calcScore();
+    playValenceAudio(S.scores['valence']);
+  }
+  function onMove(e){ const r=canvas.getBoundingClientRect(); hx=e.clientX-r.left; hy=e.clientY-r.top; }
+  canvas.addEventListener('click',onClick);
+  canvas.addEventListener('touchend',onClick,{passive:false});
+  canvas.addEventListener('mousemove',onMove);
+  draw();
+  S.dimCleanup=()=>{};
+}
+
+/* ── 3. COMPLEXITY ───────────────────────────────────────────────────── */
+function setupComplexity(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  let score = S.scores['complexity'] ?? 50;
+  let dragging = false;
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'rgba(107,203,119,.1)'); bg.addColorStop(1,'rgba(107,203,119,.02)');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+    const n=Math.max(1,Math.round(lerp(1,8,score/100)));
+    const t=Date.now()*.003;
+    for(let i=n;i>=1;i--){
+      const al=(0.55/n)*(n-i+1);
+      const amp=lerp(6,28,score/100)/Math.sqrt(i);
+      ctx.beginPath(); ctx.strokeStyle=`rgba(107,203,119,${al})`; ctx.lineWidth=2/i+.5;
+      for(let x=0;x<=W;x+=2){
+        const y=H/2+Math.sin(x*.025*i+t*i*.65)*amp;
+        x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+
+    const hy=H*(1-score/100);
+    ctx.beginPath(); ctx.strokeStyle='rgba(107,203,119,.18)'; ctx.lineWidth=1;
+    ctx.setLineDash([4,7]); ctx.moveTo(0,hy); ctx.lineTo(W,hy); ctx.stroke(); ctx.setLineDash([]);
+
+    const ggl=ctx.createRadialGradient(W/2,hy,0,W/2,hy,26);
+    ggl.addColorStop(0,'rgba(107,203,119,.45)'); ggl.addColorStop(1,'rgba(107,203,119,0)');
+    ctx.beginPath(); ctx.arc(W/2,hy,26,0,Math.PI*2); ctx.fillStyle=ggl; ctx.fill();
+    ctx.beginPath(); ctx.arc(W/2,hy,12,0,Math.PI*2); ctx.fillStyle='rgba(107,203,119,.88)'; ctx.fill();
+
+    ctx.font='11px Inter,sans-serif'; ctx.textAlign='center'; ctx.fillStyle='rgba(107,203,119,.6)';
+    ctx.fillText(`${n} harmonic${n>1?'s':''}`,W/2,hy<30?hy+28:hy-18);
+    S.animId=requestAnimationFrame(draw);
+  }
+
+  function setScore(clientY){
+    const r=canvas.getBoundingClientRect(), ys=H/r.height;
+    const y=(clientY-r.top)*ys;
+    score=clamp(Math.round((1-norm(y,0,H))*100),0,100);
+    S.scores['complexity']=score;
+    if(S.audioPlaying) playComplexityAudio(score);
+  }
+
+  function onDown(e){ dragging=true; setScore(e.touches?e.touches[0].clientY:e.clientY); }
+  function onMove(e){ if(!dragging)return; e.preventDefault(); setScore(e.touches?e.touches[0].clientY:e.clientY); }
+  function onUp(){ dragging=false; }
+  canvas.addEventListener('mousedown',onDown);
+  canvas.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  canvas.addEventListener('touchstart',onDown,{passive:true});
+  canvas.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onUp);
+  draw();
+  S.dimCleanup=()=>{ document.removeEventListener('mouseup',onUp); document.removeEventListener('touchend',onUp); };
+}
+
+/* ── 4. TEMPO ────────────────────────────────────────────────────────── */
+function setupTempo(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  S.tapTimes = [];
+  let score = S.scores['tempo'] ?? 50;
+  let rings = [], bpm = 0;
+
+  function calcBpm(){
+    const ts=S.tapTimes;
+    if(ts.length<2) return 0;
+    const recent=ts.slice(-8);
+    let sum=0;
+    for(let i=1;i<recent.length;i++) sum+=recent[i]-recent[i-1];
+    return Math.round(60000/(sum/(recent.length-1)));
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='rgba(255,165,82,.03)'; ctx.fillRect(0,0,W,H);
+
+    // BPM readout
+    ctx.textAlign='center';
+    if(bpm>0){
+      ctx.font=`bold ${Math.min(H*.35,52)}px Inter,sans-serif`;
+      ctx.fillStyle='rgba(255,165,82,.15)';
+      ctx.fillText(`${bpm}`,W/2,H*.3);
+      ctx.font='12px Inter,sans-serif'; ctx.fillStyle='rgba(255,165,82,.3)';
+      ctx.fillText('BPM',W/2,H*.3+22);
+    } else {
+      ctx.font='13px Inter,sans-serif'; ctx.fillStyle='rgba(255,165,82,.25)';
+      ctx.fillText('Tap the circle to set your rhythm',W/2,H*.22);
+    }
+
+    // Rings
+    rings=rings.filter(r=>r.a>0);
+    rings.forEach(r=>{
+      ctx.beginPath(); ctx.arc(W/2,H/2,r.r,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(255,165,82,${r.a})`; ctx.lineWidth=2; ctx.stroke();
+      r.r+=2.8; r.a-=.022;
+    });
+
+    // Tap circle
+    const pulse=1+Math.sin(Date.now()*.0045)*.05;
+    const cr=52*pulse;
+    const gl=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,cr*2.2);
+    gl.addColorStop(0,'rgba(255,165,82,.25)'); gl.addColorStop(1,'rgba(255,165,82,0)');
+    ctx.beginPath(); ctx.arc(W/2,H/2,cr*2.2,0,Math.PI*2); ctx.fillStyle=gl; ctx.fill();
+
+    const cg=ctx.createRadialGradient(W/2-cr*.28,H/2-cr*.28,0,W/2,H/2,cr);
+    cg.addColorStop(0,'rgba(255,195,120,.95)'); cg.addColorStop(1,'rgba(255,140,60,.85)');
+    ctx.beginPath(); ctx.arc(W/2,H/2,cr,0,Math.PI*2); ctx.fillStyle=cg; ctx.fill();
+
+    // Tap icon
+    ctx.font=`${cr*.55}px sans-serif`; ctx.fillStyle='rgba(255,250,240,.7)';
+    ctx.textAlign='center'; ctx.fillText('♪',W/2,H/2+cr*.2);
+
+    // Tap count hint
+    if(S.tapTimes.length>0 && S.tapTimes.length<3){
+      ctx.font='11px Inter,sans-serif'; ctx.fillStyle='rgba(255,165,82,.45)';
+      ctx.fillText(`${3-S.tapTimes.length} more tap${3-S.tapTimes.length!==1?'s':''} to calibrate`,W/2,H*.82);
+    }
+
+    S.animId=requestAnimationFrame(draw);
+  }
+
+  function onTap(e){
+    e.preventDefault();
+    const now=Date.now();
+    S.tapTimes.push(now);
+    if(S.tapTimes.length>12) S.tapTimes.shift();
+    rings.push({r:50,a:.7});
+    clickTone(880);
+    bpm=calcBpm();
+    if(bpm>0){
+      score=clamp(Math.round(norm(bpm,40,200)*100),0,100);
+      S.scores['tempo']=score;
+    }
+  }
+  canvas.addEventListener('click',onTap);
+  canvas.addEventListener('touchend',onTap,{passive:false});
+  draw();
+  S.dimCleanup=()=>{};
+}
+
+/* ── 5. SPACE ────────────────────────────────────────────────────────── */
+function setupSpace(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  let px = .5, py = .5;
+  let dragging = false;
+
+  if(S.scores['space'] !== undefined){ px=S.scores['space']/100; py=.5; }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // Grid
+    ctx.strokeStyle='rgba(162,155,254,.07)'; ctx.lineWidth=1;
+    for(let i=1;i<5;i++){
+      ctx.beginPath(); ctx.moveTo(W/5*i,0); ctx.lineTo(W/5*i,H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,H/4*i); ctx.lineTo(W,H/4*i); ctx.stroke();
+    }
+    // Axes
+    ctx.strokeStyle='rgba(162,155,254,.18)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
+
+    // Distance rings from cursor
+    const cx=px*W, cy=py*H;
+    for(let i=1;i<=3;i++){
+      const r=30*i*(1+(.5-py)*.5);
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(162,155,254,${.12-.03*i})`; ctx.lineWidth=1; ctx.stroke();
+    }
+
+    // Glow
+    const gl=ctx.createRadialGradient(cx,cy,0,cx,cy,50);
+    gl.addColorStop(0,'rgba(162,155,254,.35)'); gl.addColorStop(1,'rgba(162,155,254,0)');
+    ctx.beginPath(); ctx.arc(cx,cy,50,0,Math.PI*2); ctx.fillStyle=gl; ctx.fill();
+
+    // Cursor
+    ctx.beginPath(); ctx.moveTo(cx-14,cy); ctx.lineTo(cx+14,cy);
+    ctx.moveTo(cx,cy-14); ctx.lineTo(cx,cy+14);
+    ctx.strokeStyle='rgba(162,155,254,.55)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,7,0,Math.PI*2);
+    ctx.fillStyle='rgba(162,155,254,.9)'; ctx.fill();
+
+    // Labels
+    ctx.font='11px Inter,sans-serif'; ctx.fillStyle='rgba(162,155,254,.3)'; ctx.textAlign='center';
+    ctx.fillText('Left',W*.12,H/2-8); ctx.fillText('Right',W*.88,H/2-8);
+    ctx.fillText('Near',W/2,18); ctx.fillText('Far',W/2,H-8);
+
+    S.animId=requestAnimationFrame(draw);
+  }
+
+  function setPos(cx,cy){
+    px=clamp(cx/W,0,1); py=clamp(cy/H,0,1);
+    S.scores['space']=Math.round(px*100);
+    if(S.audioPlaying) playSpaceAudio(px,1-py);
+  }
+
+  function onDown(e){ dragging=true; const p=xy(e,canvas,W,H); setPos(p.x,p.y); }
+  function onMove(e){ if(!dragging)return; e.preventDefault(); const p=xy(e,canvas,W,H); setPos(p.x,p.y); }
+  function onUp(){ dragging=false; }
+  canvas.addEventListener('mousedown',onDown);
+  canvas.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  canvas.addEventListener('touchstart',onDown,{passive:true});
+  canvas.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onUp);
+  draw();
+  S.dimCleanup=()=>{ document.removeEventListener('mouseup',onUp); document.removeEventListener('touchend',onUp); };
+}
+
+/* ── 6. DEPTH ────────────────────────────────────────────────────────── */
+function setupDepth(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  let score = S.scores['depth'] ?? 50;
+  let dragging = false;
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'rgba(0,206,201,.02)'); bg.addColorStop(1,'rgba(0,206,201,.12)');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+    // Bass wave
+    const t=Date.now()*.002;
+    const amp=lerp(8,40,score/100);
+    const freq=lerp(.015,.04,score/100);
+    for(let layer=0;layer<3;layer++){
+      ctx.beginPath(); ctx.strokeStyle=`rgba(0,206,201,${.25-.07*layer})`; ctx.lineWidth=2-layer*.4;
+      for(let x=0;x<=W;x+=2){
+        const y=H*.55+layer*12+Math.sin(x*freq+t*(1+layer*.3))*amp;
+        x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+
+    // Vertical handle
+    const hy=H*(1-score/100);
+    ctx.beginPath(); ctx.strokeStyle='rgba(0,206,201,.15)'; ctx.lineWidth=1;
+    ctx.setLineDash([4,7]); ctx.moveTo(W/2-80,hy); ctx.lineTo(W/2+80,hy); ctx.stroke(); ctx.setLineDash([]);
+
+    const gg=ctx.createRadialGradient(W/2,hy,0,W/2,hy,28);
+    gg.addColorStop(0,'rgba(0,206,201,.45)'); gg.addColorStop(1,'rgba(0,206,201,0)');
+    ctx.beginPath(); ctx.arc(W/2,hy,28,0,Math.PI*2); ctx.fillStyle=gg; ctx.fill();
+    ctx.beginPath(); ctx.arc(W/2,hy,13,0,Math.PI*2); ctx.fillStyle='rgba(0,206,201,.88)'; ctx.fill();
+
+    // Freq label
+    const freq_hz=Math.round(lerp(38,200,score/100));
+    ctx.font='11px Inter,sans-serif'; ctx.textAlign='center'; ctx.fillStyle='rgba(0,206,201,.55)';
+    ctx.fillText(`${freq_hz} Hz`,W/2,hy<30?hy+28:hy-18);
+
+    S.animId=requestAnimationFrame(draw);
+  }
+
+  function setScore(clientY){
+    const r=canvas.getBoundingClientRect(), ys=H/r.height;
+    const y=(clientY-r.top)*ys;
+    score=clamp(Math.round((1-norm(y,0,H))*100),0,100);
+    S.scores['depth']=score;
+    if(S.audioPlaying) playDepthAudio(score);
+  }
+
+  function onDown(e){ dragging=true; setScore(e.touches?e.touches[0].clientY:e.clientY); }
+  function onMove(e){ if(!dragging)return; e.preventDefault(); setScore(e.touches?e.touches[0].clientY:e.clientY); }
+  function onUp(){ dragging=false; }
+  canvas.addEventListener('mousedown',onDown);
+  canvas.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  canvas.addEventListener('touchstart',onDown,{passive:true});
+  canvas.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onUp);
+  draw();
+  S.dimCleanup=()=>{ document.removeEventListener('mouseup',onUp); document.removeEventListener('touchend',onUp); };
+}
+
+/* ── 7. TEXTURE ──────────────────────────────────────────────────────── */
+function setupTexture(canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const TEXTURES = [
+    { label:'Sine',     wave:'sine',     color:'#a8edff', score:0  },
+    { label:'Triangle', wave:'triangle', color:'#b7a9ff', score:33 },
+    { label:'Sawtooth', wave:'sawtooth', color:'#ffa552', score:67 },
+    { label:'Square',   wave:'square',   color:'#fd79a8', score:100}
+  ];
+  let chosen = S.textureChoice || 0;
+
+  function drawWave(ctx, type, x, y, w, h, color, sel){
+    ctx.beginPath();
+    const steps=w/2;
+    for(let i=0;i<=steps;i++){
+      const t=i/steps;
+      let v;
+      if(type==='sine')     v=Math.sin(t*Math.PI*4);
+      else if(type==='triangle') v=(t%0.5<0.25)?t*8%2-1:3-t*8%2;
+      else if(type==='sawtooth') v=(t*4%1)*2-1;
+      else v=Math.sin(t*Math.PI*4)>=0?1:-1;
+      const px2=x+i*2, py=y+h/2+v*(h*.35);
+      i===0?ctx.moveTo(px2,py):ctx.lineTo(px2,py);
+    }
+    ctx.strokeStyle = sel ? color : `${color}55`;
+    ctx.lineWidth   = sel ? 2.5 : 1.5;
+    ctx.stroke();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const cw=W/4;
+    const t=Date.now()*.002;
+
+    TEXTURES.forEach((tx,i)=>{
+      const x=i*cw, sel=i===chosen;
+      // Cell bg
+      ctx.fillStyle=sel?`${tx.color}18`:'rgba(255,255,255,.02)';
+      ctx.fillRect(x,0,cw,H);
+      if(sel){
+        ctx.strokeStyle=`${tx.color}55`; ctx.lineWidth=1.5;
+        ctx.strokeRect(x+1,1,cw-2,H-2);
+      }
+      // Wave
+      const wOff=t*(i+1)*.6;
+      ctx.save(); ctx.translate(0,0);
+      // static preview
+      drawWave(ctx,tx.wave,x+cw*.05,H/2-20,cw*.9,50,tx.color,sel);
+      // animated wave
+      ctx.beginPath();
+      const steps2=Math.floor(cw*.9/2);
+      for(let j=0;j<=steps2;j++){
+        const tv=(j/steps2);
+        let v;
+        if(tx.wave==='sine')      v=Math.sin((tv*4+wOff)*Math.PI*2);
+        else if(tx.wave==='triangle') v=Math.abs((tv*4+wOff)%1-.5)*4-1;
+        else if(tx.wave==='sawtooth') v=((tv*4+wOff)%1)*2-1;
+        else v=Math.sin((tv*4+wOff)*Math.PI*2)>=0?1:-1;
+        const px3=x+cw*.05+j*2, py=H/2+26+v*12;
+        j===0?ctx.moveTo(px3,py):ctx.lineTo(px3,py);
+      }
+      ctx.strokeStyle=`${tx.color}${sel?'44':'22'}`; ctx.lineWidth=1; ctx.stroke();
+      ctx.restore();
+
+      // Label
+      ctx.font=`${sel?'600 ':''}13px Inter,sans-serif`;
+      ctx.fillStyle=sel?tx.color:`${tx.color}66`;
+      ctx.textAlign='center';
+      ctx.fillText(tx.label,x+cw/2,H-18);
+
+      if(sel){
+        ctx.font='11px Inter,sans-serif'; ctx.fillStyle=`${tx.color}77`;
+        ctx.fillText('✓',x+cw/2,H-36);
+      }
+    });
+
+    S.animId=requestAnimationFrame(draw);
+  }
+
+  function onClick(e){
+    e.preventDefault();
+    const r=canvas.getBoundingClientRect();
+    const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+    chosen=clamp(Math.floor(cx/(r.width/4)),0,3);
+    S.textureChoice=chosen;
+    S.scores['texture']=TEXTURES[chosen].score;
+    playTextureAudio(chosen);
+  }
+  canvas.addEventListener('click',onClick);
+  canvas.addEventListener('touchend',onClick,{passive:false});
+  draw();
+  S.dimCleanup=()=>{};
+}
+
+/* ── SHARED INPUT HELPER ─────────────────────────────────────────────── */
+function xy(e, canvas, W, H){
+  const r=canvas.getBoundingClientRect();
+  const sx=W/r.width, sy=H/r.height;
+  const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+  const cy=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
+  return {x:cx*sx, y:cy*sy};
+}
+
+/* ── RESULT RENDERING ────────────────────────────────────────────────── */
+const MOOD_TYPES = [
+  { test: s => s.energy>65&&s.valence>65,           name:'Solar Architect',  icon:'fa-solid fa-sun',
+    desc:'You radiate luminous energy with warm emotional clarity. A natural builder of bright experiences, you thrive when things move and shine.' },
+  { test: s => s.energy>65&&s.valence<35,           name:'Storm Rider',      icon:'fa-solid fa-bolt-lightning',
+    desc:'Intense, driven, and at home in the electric dark. You channel powerful undercurrents into focused momentum.' },
+  { test: s => s.energy<35&&s.valence>65,           name:'Lunar Dreamer',    icon:'fa-solid fa-moon',
+    desc:'Soft luminosity in peaceful, introspective spaces. You find beauty in gentle frequencies and reflective quietude.' },
+  { test: s => s.energy<35&&s.valence<35,           name:'Deep Diver',       icon:'fa-solid fa-circle-dot',
+    desc:'You seek beauty in profound depth and stillness. The hidden layers of sound and feeling are your natural territory.' },
+  { test: s => s.complexity>65&&s.tempo>65,         name:'Quantum Weaver',   icon:'fa-solid fa-atom',
+    desc:'A rapid, intricate mind weaving many simultaneous threads. You thrive at the intersection of complexity and speed.' },
+  { test: s => s.complexity<35&&s.tempo<35,         name:'Still Waters',     icon:'fa-solid fa-water',
+    desc:'Simple, crystalline clarity in unhurried flow. You find truth in purity and let silence speak between the notes.' },
+  { test: s => s.space>65&&s.depth>65,              name:'Cosmic Architect', icon:'fa-solid fa-globe',
+    desc:'Expansive spatial awareness rooted in deep, resonant foundations. You build sonic worlds that stretch and ground simultaneously.' },
+  { test: s => s.texture>65&&s.energy>55,           name:'Voltage Shaper',   icon:'fa-solid fa-wave-square',
+    desc:'Raw, textured energy with a directional edge. You prefer sounds that feel physical, unpolished, and alive with grain.' },
+  { test: () => true,                               name:'Resonant Heart',   icon:'fa-solid fa-heart',
+    desc:'Beautifully balanced across all dimensions — you harmonise contrasts and find your centre across the entire sonic spectrum.' }
+];
+
+function getMoodType(sc){
+  return MOOD_TYPES.find(m=>m.test(sc)) || MOOD_TYPES[MOOD_TYPES.length-1];
+}
+
+function renderResult(){
+  const sc = S.scores;
+  const mood = getMoodType(sc);
+  const name = S.profile.name || 'Your';
+
+  $('result-name').textContent = name === 'Your' ? 'Your Sonic Profile' : `${name}'s Sonic Profile`;
+  $('mood-type-txt').textContent = mood.name;
+  $('mood-desc').textContent = mood.desc;
+
+  // Score bars
+  const barEl = $('score-bars');
+  barEl.innerHTML = '';
+  DIMS.forEach(d=>{
+    const v = sc[d.id] ?? d.def;
+    const row = document.createElement('div'); row.className='score-bar-row';
+    row.innerHTML=`
+      <span class="sbl">${d.name.split(' ')[0]}</span>
+      <div class="sbtrack"><div class="sbfill" id="sbf-${d.id}" style="width:0%;background:${d.color}99"></div></div>
+      <span class="sbval">${v}</span>`;
+    barEl.appendChild(row);
+  });
+  // Animate bars after paint
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    DIMS.forEach(d=>{
+      const el=$(`sbf-${d.id}`);
+      if(el) el.style.width=(sc[d.id]??d.def)+'%';
+    });
+  }));
+
+  // Radar chart
+  setTimeout(()=>drawRadar(sc), 80);
+}
+
+function drawRadar(sc){
+  const canvas=$('radar-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const cx=W/2, cy=H/2, r=Math.min(W,H)*.38;
+  const n=DIMS.length;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Rings
+  for(let i=1;i<=5;i++){
+    ctx.beginPath();
+    for(let j=0;j<n;j++){
+      const a=j/n*Math.PI*2-Math.PI/2;
+      const rr=r*i/5;
+      j===0?ctx.moveTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr):ctx.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);
+    }
+    ctx.closePath();
+    ctx.strokeStyle=`rgba(127,106,240,${.04+.03*i})`; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  // Spokes
+  DIMS.forEach((_,i)=>{
+    const a=i/n*Math.PI*2-Math.PI/2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
+    ctx.strokeStyle='rgba(127,106,240,.12)'; ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Data polygon
+  ctx.beginPath();
+  DIMS.forEach((d,i)=>{
+    const a=i/n*Math.PI*2-Math.PI/2;
+    const v=(sc[d.id]??d.def)/100;
+    const px=cx+Math.cos(a)*r*v, py=cy+Math.sin(a)*r*v;
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  });
+  ctx.closePath();
+  const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+  grad.addColorStop(0,'rgba(127,106,240,.45)'); grad.addColorStop(1,'rgba(183,169,255,.15)');
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.strokeStyle='rgba(183,169,255,.65)'; ctx.lineWidth=2; ctx.stroke();
+
+  // Dots + labels
+  DIMS.forEach((d,i)=>{
+    const a=i/n*Math.PI*2-Math.PI/2;
+    const v=(sc[d.id]??d.def)/100;
+    const px=cx+Math.cos(a)*r*v, py=cy+Math.sin(a)*r*v;
+    ctx.beginPath(); ctx.arc(px,py,4,0,Math.PI*2);
+    ctx.fillStyle=d.color; ctx.fill();
+
+    // Axis labels
+    const lx=cx+Math.cos(a)*(r+20), ly=cy+Math.sin(a)*(r+16);
+    ctx.font='10px Inter,sans-serif'; ctx.fillStyle='rgba(183,169,255,.65)'; ctx.textAlign='center';
+    ctx.fillText(d.name.split(' ')[0],lx,ly+4);
+  });
+}
+
+/* ── SAVE / HISTORY ──────────────────────────────────────────────────── */
+function saveResult(){
+  const entry = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+    name: S.profile.name || 'Anonymous',
+    mood: getMoodType(S.scores).name,
+    scores: {...S.scores}
+  };
+  S.history.unshift(entry);
+  if(S.history.length>20) S.history.pop();
+  try { localStorage.setItem('echoplay_v1', JSON.stringify(S.history)); } catch(_){}
+  const btn=document.querySelector('.result-actions .btn-primary');
+  if(btn){ btn.innerHTML='<i class="fa-solid fa-check"></i> Saved!'; btn.disabled=true; }
+}
+
+function renderHistory(){
+  const list=$('history-list'), empty=$('history-empty');
+  list.innerHTML='';
+  if(!S.history.length){ list.style.display='none'; empty.style.display='block'; return; }
+  list.style.display='flex'; empty.style.display='none';
+
+  S.history.forEach(entry=>{
+    const item=document.createElement('div'); item.className='history-item fade-up';
+    const bars=DIMS.map(d=>{
+      const v=entry.scores[d.id]??50;
+      return `<div class="mini-bar" style="height:${Math.max(3,v*.28*1)}px;background:${d.color}66"></div>`;
+    }).join('');
+    item.innerHTML=`
+      <div class="history-item-top">
+        <span class="hi-mood">${entry.mood}</span>
+        <span class="hi-date">${entry.date}${entry.name&&entry.name!=='Anonymous'?' · '+entry.name:''}</span>
+      </div>
+      <div class="mini-bars">${bars}</div>`;
+    item.addEventListener('click',()=>{ S.scores=entry.scores; nav('result'); });
+    list.appendChild(item);
+  });
+}
+
+/* ── BOOT ────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  initLandingCanvas();
+});
+</script>
+</body>
+</html>
