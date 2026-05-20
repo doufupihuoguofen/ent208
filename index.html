@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resonance EchoPlay</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --bg-base:       #0a0d12;
+      --bg-card:       #12161c;
+      --bg-deep:       #0d1117;
+      --bg-input:      #1a1f28;
+      --purple-bright: #b7a9ff;
+      --purple-mid:    #8f7aff;
+      --purple-deep:   #7f6af0;
+      --purple-dark:   #5f4ab0;
+      --text-primary:  #ececff;
+      --text-secondary:#b8c0d8;
+      --text-muted:    #7a85a5;
+      --border-subtle: rgba(138,110,255,0.12);
+      --radius-card:   28px;
+      --radius-btn:    40px;
+      --radius-input:  16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+    }
+    button,input { font: inherit; }
+    .app-view { min-height: 100vh; }
+    .top-nav {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:18px 24px; border-bottom:1px solid var(--border-subtle);
+      background:rgba(10,13,18,.85); position:sticky; top:0; z-index:30; backdrop-filter:blur(8px);
+    }
+    .brand { letter-spacing: 3px; color: var(--purple-bright); font-size: 12px; text-transform: uppercase; }
+    .nav-actions { display:flex; gap:10px; }
+    .icon-btn {
+      width:42px; height:42px; border-radius:50%; border:1px solid var(--border-subtle);
+      background:var(--bg-card); color:var(--text-secondary); cursor:pointer;
+    }
+    .icon-btn:hover { color:var(--purple-bright); border-color:rgba(143,122,255,.45); }
+    .view-test {
+      background:linear-gradient(180deg,#0a0d12,#0d1117 30%,#0a0d12);
+      padding-bottom:42px;
+    }
+    .main-wrap { width:min(1100px,calc(100% - 32px)); margin:18px auto; }
+    .card {
+      background:var(--bg-card); border:1px solid var(--border-subtle);
+      border-radius:var(--radius-card); padding:22px;
+      box-shadow:0 20px 40px rgba(0,0,0,.25);
+    }
+    .step-title { margin:0 0 8px; font-size: 26px; font-weight:500; }
+    .step-sub { margin:0 0 18px; color:var(--text-muted); }
+    .stepper { display:flex; gap:8px; margin-bottom:16px; }
+    .step-dot { flex:1; height:8px; border-radius:999px; background:#232a36; overflow:hidden; }
+    .step-dot > span { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--purple-mid),var(--purple-bright)); transition:width .3s; }
+    .timer-line { display:flex; align-items:center; justify-content:space-between; margin:8px 0 14px; color:var(--text-secondary); }
+    .timer-bar { width:100%; height:10px; border-radius:999px; background:#222a36; overflow:hidden; }
+    .timer-bar span { display:block; height:100%; width:100%; background:linear-gradient(90deg,#b7a9ff,#7f6af0); transition:width .15s linear; }
+    .step-controls { display:flex; justify-content:flex-end; margin-top:14px; }
+    .primary-btn {
+      border:none; background:#d9d0ff; color:#0b0e14; border-radius:var(--radius-btn);
+      padding:12px 22px; font-weight:600; cursor:pointer;
+    }
+    .primary-btn:hover { background:#e7deff; }
+    .ghost-btn {
+      border:1px solid var(--border-subtle); background:transparent; color:var(--text-secondary);
+      border-radius:var(--radius-btn); padding:10px 18px; cursor:pointer;
+    }
+    .step-canvas-wrap {
+      position:relative; width:100%; height:320px; border-radius:20px;
+      background:#0b0f15; border:1px solid rgba(143,122,255,.18); overflow:hidden;
+    }
+    canvas.step-canvas { width:100%; height:100%; display:block; }
+    .center-pulse {
+      position:absolute; left:50%; top:50%; width:22px; height:22px; border-radius:50%;
+      border:2px solid #b7a9ff; transform:translate(-50%,-50%); opacity:.9;
+      box-shadow:0 0 16px rgba(143,122,255,.45);
+    }
+    .center-pulse.active { animation:pulse .24s ease-out; }
+    @keyframes pulse { from { transform:translate(-50%,-50%) scale(1);} to {transform:translate(-50%,-50%) scale(1.8); opacity:.3;} }
+    .result-layout { display:grid; grid-template-columns: 1.2fr .8fr; gap:16px; margin-top:16px; }
+    .type-head { display:flex; align-items:center; gap:12px; font-size:26px; margin-bottom:8px; }
+    .type-head i { color:var(--purple-bright); }
+    .fortune-box { background:#10151d; border:1px solid var(--border-subtle); border-radius:18px; padding:14px; }
+    .fortune-title { margin:0 0 8px; color:var(--purple-bright); }
+    ul.clean { margin:6px 0 0 0; padding-left:18px; color:var(--text-secondary); }
+    .mix-player { margin-top:14px; }
+    #mix-wave { width:100%; height:110px; border:1px solid var(--border-subtle); border-radius:14px; background:#0b1018; }
+    .wall-post { display:flex; gap:10px; margin:12px 0; }
+    .wall-post input {
+      flex:1; background:var(--bg-input); color:var(--text-primary);
+      border:1px solid #2a3140; border-radius:12px; padding:10px 12px;
+    }
+    .wall-list { display:grid; gap:10px; max-height:360px; overflow:auto; }
+    .wall-item {
+      background:#0f141d; border:1px solid rgba(143,122,255,.18); border-radius:14px;
+      padding:10px 12px; display:flex; justify-content:space-between; gap:10px;
+    }
+    .wall-meta { color:var(--text-muted); font-size:12px; }
+    .like-btn { border:none; background:transparent; color:#a9b3d1; cursor:pointer; }
+    .like-btn.liked { color:#ff95b7; }
+    .profile-grid { display:grid; grid-template-columns:320px 1fr; gap:16px; }
+    .avatar {
+      width:86px; height:86px; border-radius:50%; background:#1d2531;
+      display:flex; align-items:center; justify-content:center; color:var(--purple-bright); font-size:34px;
+      border:1px solid var(--border-subtle);
+    }
+    .muted { color: var(--text-muted); }
+    .history-list { display:grid; gap:10px; }
+    .history-item { border-left:2px solid #4d3f9c; padding:8px 12px; background:#0f141d; border-radius:10px; }
+    @media (max-width: 900px) { .result-layout { grid-template-columns:1fr; } }
+
+/* ===== VIEW_PROFILE ===== */
+.view-profile {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  position: relative;
+  color: #ececff;
+}
+.profile-bg-layer {
+  position: fixed; top:0; left:0; width:100%; height:100%; z-index:-2; background:#0b0e14;
+}
+.gradient-bg {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background: linear-gradient(135deg, #0b0e14 0%, #1a1428 30%, #0d1117 70%, #0a0d12 100%);
+  background-size:400% 400%;
+  animation: gradientShift 20s ease infinite;
+}
+@keyframes gradientShift {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+.profile-bg-layer .particle {
+  position:absolute; width:2px; height:2px; background:rgba(180,150,255,0.4); border-radius:50%;
+  box-shadow:0 0 8px #a088ff; animation:particleFloat 15s infinite ease-in-out; pointer-events:none;
+}
+@keyframes particleFloat {
+  0%,100%{ transform:translateY(0) translateX(0); opacity:0.3; }
+  25%    { transform:translateY(-30px) translateX(15px); opacity:0.6; }
+  50%    { transform:translateY(-15px) translateX(-20px); opacity:0.4; }
+  75%    { transform:translateY(20px) translateX(10px); opacity:0.5; }
+}
+.bg-media { position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; transition:opacity 1.2s ease; object-fit:cover; pointer-events:none; }
+.bg-media.active { opacity:1; }
+.bg-video { position:absolute; top:50%; left:50%; min-width:100%; min-height:100%; width:auto; height:auto; transform:translate(-50%,-50%); object-fit:cover; }
+.bg-switcher { position:fixed; bottom:24px; right:24px; display:flex; gap:10px; z-index:100; flex-wrap:wrap; justify-content:flex-end; max-width:280px; }
+.bg-btn { width:40px; height:40px; border-radius:50%; border:1.5px solid rgba(180,150,255,0.3); background:rgba(18,22,28,0.7); backdrop-filter:blur(8px); color:#b7a9ff; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; font-size:16px; }
+.bg-btn:hover { border-color:#a088ff; background:rgba(30,35,45,0.8); color:#d6caff; transform:scale(1.1); }
+.bg-btn.active { border-color:#8f7aff; background:rgba(120,90,255,0.2); color:#e0d6ff; box-shadow:0 0 15px rgba(127,106,240,0.4); }
+.settings-entry { position:fixed; top:24px; right:24px; z-index:200; width:48px; height:48px; border-radius:50%; background:rgba(18,22,28,0.75); backdrop-filter:blur(8px); border:1.5px solid rgba(180,150,255,0.4); color:#b7a9ff; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer; transition:all 0.25s ease; box-shadow:0 0 20px rgba(127,106,240,0.2); }
+.settings-entry:hover { border-color:#a088ff; background:rgba(30,35,45,0.85); color:#d6caff; transform:rotate(30deg) scale(1.1); box-shadow:0 0 30px rgba(127,106,240,0.4); }
+.now-playing { position:fixed; bottom:24px; left:24px; z-index:150; display:flex; align-items:center; gap:12px; padding:10px 18px; background:rgba(18,22,28,0.75); backdrop-filter:blur(8px); border-radius:40px; border:1px solid rgba(138,110,255,0.2); color:#b0a3ff; font-size:13px; max-width:280px; }
+.now-playing i { color:#7f6af0; animation:iconPulse 2s infinite; }
+@keyframes iconPulse { 0%,100%{ opacity:0.6; } 50%{ opacity:1; } }
+.now-playing span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.np-music-control { margin-left:auto; cursor:pointer; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:rgba(120,90,255,0.15); transition:all 0.2s; }
+.np-music-control:hover { background:rgba(120,90,255,0.3); }
+.profile-main { position:relative; z-index:10; max-width:1200px; margin:0 auto; padding:32px 24px; min-height:100vh; display:flex; flex-direction:column; }
+.profile-navbar { display:flex; justify-content:space-between; align-items:center; padding:16px 0; margin-bottom:24px; border-bottom:1px solid rgba(138,110,255,0.15); }
+.nav-brand { font-size:22px; font-weight:600; letter-spacing:2px; color:#d6caff; text-shadow:0 0 20px rgba(127,106,240,0.5); cursor:pointer; }
+.profile-nav-links { display:flex; gap:36px; }
+.profile-nav-links a { color:#9da6c0; text-decoration:none; font-size:14px; text-transform:uppercase; letter-spacing:2px; transition:color 0.2s; }
+.profile-nav-links a:hover, .profile-nav-links a.active { color:#c0b0ff; }
+.profile-welcome { margin-bottom:40px; }
+.profile-greeting { font-size:14px; color:#7a85a5; letter-spacing:3px; text-transform:uppercase; margin-bottom:8px; }
+.profile-name { font-size:56px; font-weight:350; color:#ececff; letter-spacing:-1px; margin-bottom:12px; }
+.profile-name span { color:#b7a9ff; font-weight:400; }
+.profile-tagline { font-size:18px; color:#a0a8c0; border-left:3px solid #7f6af0; padding-left:20px; line-height:1.5; }
+.profile-grid { display:grid; grid-template-columns:300px 1fr; gap:28px; flex:1; }
+.profile-left-card { background:rgba(18,22,28,0.75); backdrop-filter:blur(12px); border-radius:28px; padding:28px 22px; border:1px solid rgba(138,110,255,0.12); box-shadow:0 15px 35px rgba(0,0,0,0.4); }
+.avatar-section { display:flex; flex-direction:column; align-items:center; margin-bottom:28px; }
+.profile-avatar { width:130px; height:130px; border-radius:50%; border:3px solid #b7a9ff; box-shadow:0 0 30px rgba(127,106,240,0.3); margin-bottom:16px; background:linear-gradient(145deg,#2a2e4a,#1a1e2e); display:flex; align-items:center; justify-content:center; font-size:48px; color:#d4c5ff; }
+.profile-username { font-size:24px; font-weight:500; color:#ececff; margin-bottom:4px; }
+.profile-user-title { font-size:13px; color:#8592b0; letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+.type-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 14px; background:rgba(120,90,255,0.15); border:1px solid rgba(138,110,255,0.3); border-radius:20px; font-size:13px; color:#c4b8ff; margin-bottom:8px; }
+.info-item { display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid rgba(100,80,255,0.1); }
+.info-item:last-child { border-bottom:none; }
+.info-icon { width:36px; height:36px; border-radius:12px; background:rgba(120,90,255,0.15); display:flex; align-items:center; justify-content:center; color:#b0a3ff; font-size:18px; }
+.info-content { flex:1; }
+.info-label { font-size:11px; color:#6e7a9a; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px; }
+.info-value { font-size:16px; color:#e0d6ff; font-weight:500; }
+.profile-right { display:flex; flex-direction:column; gap:24px; }
+.profile-card { background:rgba(18,22,28,0.75); backdrop-filter:blur(12px); border-radius:24px; padding:24px 28px; border:1px solid rgba(138,110,255,0.12); }
+.section-header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+.section-header i { color:#b0a3ff; font-size:24px; }
+.section-header h3 { font-size:20px; font-weight:400; color:#ececff; letter-spacing:1px; }
+.mix-waveform-canvas { width:100%; height:80px; background:rgba(30,35,48,0.5); border-radius:16px; display:block; }
+.mix-controls { display:flex; align-items:center; gap:16px; margin-top:16px; }
+.mix-play-btn { padding:10px 28px; background:linear-gradient(135deg,#7f6af0,#5f4ab0); border:none; border-radius:40px; color:white; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+.mix-play-btn:hover { transform:scale(1.03); box-shadow:0 6px 18px rgba(127,106,240,0.4); }
+.mix-label { color:#7a85a5; font-size:13px; }
+.history-timeline { display:flex; flex-direction:column; gap:12px; }
+.history-item { display:flex; align-items:center; gap:16px; padding:12px 16px; background:rgba(30,35,48,0.4); border-radius:16px; border:1px solid rgba(100,80,255,0.08); transition:all 0.2s; cursor:pointer; }
+.history-item:hover { border-color:#8f7aff; background:rgba(40,45,60,0.5); }
+.history-date { font-size:12px; color:#6e7a9a; min-width:72px; }
+.history-type-icon { font-size:22px; }
+.history-type-name { font-size:14px; color:#e0d6ff; font-weight:500; }
+.history-type-en { font-size:12px; color:#7a85a5; }
+.stats-row { display:flex; gap:30px; margin-top:8px; }
+.stat-block { text-align:center; }
+.stat-number { font-size:28px; font-weight:600; color:#d6caff; }
+.stat-label { font-size:12px; color:#7a85a5; text-transform:uppercase; letter-spacing:1px; }
+.glow-line { position:fixed; bottom:0; left:0; width:100%; height:1px; background:linear-gradient(90deg,transparent,#8f7aff,#b0a3ff,#8f7aff,transparent); z-index:50; opacity:0.3; }
+.settings-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(12px); z-index:300; opacity:0; visibility:hidden; transition:all 0.3s ease; overflow-y:auto; padding:40px 20px; }
+.settings-overlay.active { opacity:1; visibility:visible; }
+.settings-container { max-width:900px; margin:0 auto; position:relative; }
+.settings-header { display:flex; align-items:center; gap:20px; margin-bottom:36px; padding-bottom:20px; border-bottom:1px solid rgba(138,110,255,0.15); }
+.settings-header h2 { font-size:28px; font-weight:350; color:#ececff; }
+.close-settings { width:44px; height:44px; border-radius:14px; background:rgba(18,22,28,0.75); backdrop-filter:blur(8px); border:1.5px solid rgba(180,150,255,0.3); color:#b7a9ff; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer; transition:all 0.2s; margin-left:auto; }
+.close-settings:hover { border-color:#8f7aff; background:rgba(30,35,45,0.85); color:#d6caff; }
+.settings-card { background:rgba(18,22,28,0.9); backdrop-filter:blur(12px); border-radius:28px; padding:32px; border:1px solid rgba(138,110,255,0.12); margin-bottom:24px; }
+.card-title { display:flex; align-items:center; gap:12px; font-size:18px; color:#d6caff; margin-bottom:28px; padding-bottom:16px; border-bottom:1px solid rgba(100,80,255,0.15); }
+.avatar-section-settings { display:flex; align-items:center; gap:32px; flex-wrap:wrap; }
+.current-avatar { width:100px; height:100px; border-radius:50%; border:3px solid #b7a9ff; background:linear-gradient(145deg,#2a2e4a,#1a1e2e); display:flex; align-items:center; justify-content:center; font-size:42px; color:#d4c5ff; cursor:pointer; }
+.avatar-presets { display:flex; gap:12px; flex-wrap:wrap; }
+.preset-item { width:50px; height:50px; border-radius:50%; border:2px solid rgba(180,150,255,0.3); background:linear-gradient(145deg,#2a2e4a,#1a1e2e); display:flex; align-items:center; justify-content:center; font-size:22px; color:#d4c5ff; cursor:pointer; transition:all 0.2s; }
+.preset-item:hover { border-color:#8f7aff; transform:scale(1.1); }
+.form-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:24px; margin-top:28px; }
+.form-group { display:flex; flex-direction:column; gap:8px; }
+.form-group.full-width { grid-column:span 2; }
+.form-group label { font-size:12px; color:#9da6c0; text-transform:uppercase; letter-spacing:1.5px; }
+.form-input { padding:14px 18px; background:rgba(30,35,48,0.6); border:1.5px solid rgba(100,80,255,0.15); border-radius:16px; font-size:15px; color:#ececff; outline:none; font-family:inherit; }
+.form-input:focus { border-color:#8f7aff; background:rgba(40,45,60,0.8); }
+.save-settings-btn { margin-top:24px; padding:16px 32px; background:linear-gradient(135deg,#7f6af0,#5f4ab0); border:none; border-radius:40px; color:white; font-weight:600; font-size:16px; cursor:pointer; width:100%; transition:all 0.2s; font-family:inherit; }
+.save-settings-btn:hover { transform:scale(1.01); box-shadow:0 8px 20px rgba(127,106,240,0.4); }
+.toast-message { position:fixed; bottom:40px; left:50%; transform:translateX(-50%); background:rgba(30,35,48,0.95); border:1px solid rgba(138,110,255,0.3); border-radius:40px; padding:14px 28px; color:#d6caff; z-index:400; opacity:0; visibility:hidden; transition:all 0.3s; }
+.toast-message.show { opacity:1; visibility:visible; }
+@media (max-width:900px) {
+  .profile-grid { grid-template-columns:1fr; }
+  .form-grid { grid-template-columns:1fr; }
+  .form-group.full-width { grid-column:span 1; }
+}
+@media (max-width:600px) {
+  .profile-nav-links { display:none; }
+  .profile-name { font-size:40px; }
+  .stats-row { gap:16px; }
+}
+
+.view-login {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #0a0d12 0%, #0d1117 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.login-container {
+  display: flex;
+  max-width: 1040px;
+  width: 100%;
+  background: #12161c;
+  border-radius: 32px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(100,80,255,0.08);
+  overflow: hidden;
+  min-height: 580px;
+}
+.login-left {
+  flex: 1.1;
+  background: #0d1117;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  border-right: 1px solid rgba(138,110,255,0.12);
+}
+.character-group { display:flex; gap:32px; align-items:flex-end; justify-content:center; margin-bottom:40px; width:100%; }
+.character { display:flex; flex-direction:column; align-items:center; transition:transform 0.25s cubic-bezier(0.34,1.3,0.64,1); flex:0 0 auto; }
+.head-wrapper { transform-origin:center bottom; transition:transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94); }
+.char-head {
+  width:72px; height:72px; background:transparent; border:2.5px solid #b7b7ff;
+  border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  position:relative; box-shadow:0 0 12px rgba(120,100,255,0.2); transition:border-color 0.25s,box-shadow 0.25s;
+}
+.eyes { display:flex; gap:16px; margin-top:4px; justify-content:center; }
+.eye { width:22px; height:22px; border:2px solid #c4c4ff; border-radius:50%; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.pupil { width:9px; height:9px; background:#d4c5ff; border-radius:50%; transition:transform 0.08s linear; box-shadow:0 0 8px #a88eff; will-change:transform; }
+.char-mouth { width:18px; height:5px; border-bottom:2px solid #a0a0e0; border-radius:0 0 10px 10px; margin-top:8px; opacity:0.6; }
+.body-line { width:2px; height:44px; background:#7a7ad9; margin-top:-2px; opacity:0.45; }
+.neck-dot { width:10px; height:10px; border:2px solid #a088ff; border-radius:50%; margin-top:6px; opacity:0.7; }
+.character-label { color:#b0b8d0; font-size:12px; letter-spacing:2.5px; text-transform:uppercase; margin-top:14px; font-weight:400; opacity:0.65; }
+.character.peeking .head-wrapper { transform:translateY(-3px) scale(1.01); }
+.character.peeking .char-head { border-color:#c6b0ff; box-shadow:0 0 20px rgba(127,106,240,0.25); }
+.character.avoiding .head-wrapper { transform:rotate(-10deg) translateX(-3px); }
+.character.avoiding .char-head { border-color:#6a6a9a; box-shadow:0 0 8px #4a4080; }
+.character.avoiding .pupil { opacity:0.45; }
+.character:nth-child(2) .body-line { height:54px; }
+.character:nth-child(2) .char-head { width:76px; height:76px; }
+.left-hint { color:#6e7a9a; font-size:12px; margin-top:20px; text-transform:uppercase; letter-spacing:4px; opacity:0.55; text-align:center; }
+.login-right { flex:1; padding:52px 48px; display:flex; flex-direction:column; justify-content:center; background:#12161c; }
+.login-logo { color:#b7a9ff; font-weight:500; letter-spacing:5px; font-size:13px; margin-bottom:12px; text-transform:uppercase; opacity:0.9; }
+.login-title { font-size:38px; font-weight:350; color:#ececff; margin-bottom:8px; letter-spacing:-0.5px; }
+.login-subtitle { color:#8592b0; margin-bottom:38px; font-size:14px; border-left:3px solid #7f6af0; padding-left:18px; line-height:1.4; }
+.input-group { margin-bottom:24px; position:relative; }
+.input-label { display:block; margin-bottom:8px; font-weight:400; color:#b8c0d8; font-size:12px; text-transform:uppercase; letter-spacing:1.2px; }
+.input-field { width:100%; padding:15px 18px; padding-right:50px; background:#1a1f28; border:1.5px solid #2a3140; border-radius:16px; font-size:15px; color:#ececff; transition:all 0.2s; outline:none; }
+.input-field:focus { border-color:#8f7aff; background:#1b222e; box-shadow:0 0 0 3px rgba(120,90,255,0.12); }
+.input-field::placeholder { color:#5b6680; font-size:14px; }
+.toggle-password { position:absolute; right:18px; top:44px; cursor:pointer; color:#7a85a5; font-size:18px; transition:color 0.2s; width:24px; height:24px; display:flex; align-items:center; justify-content:center; }
+.toggle-password:hover { color:#c0b0ff; }
+.login-options { display:flex; justify-content:space-between; align-items:center; margin:18px 0 30px; }
+.remember-label { display:flex; align-items:center; gap:10px; color:#9da6c0; font-size:13px; }
+.remember-label input { accent-color:#7f6af0; width:18px; height:18px; margin:0; }
+.forgot-link { color:#b0a3ff; text-decoration:none; font-size:13px; border-bottom:1px dotted #5f5490; padding-bottom:2px; }
+.forgot-link:hover { color:#d6caff; }
+.begin-btn { background:#d9d0ff; color:#0b0e14; border:none; padding:16px 24px; border-radius:40px; font-weight:600; font-size:15px; letter-spacing:1.5px; cursor:pointer; transition:all 0.2s; margin-bottom:26px; text-transform:uppercase; box-shadow:0 8px 18px rgba(100,70,220,0.2); width:100%; }
+.begin-btn:hover { background:#e8e0ff; box-shadow:0 10px 22px #5f4ab0; transform:scale(1.01); }
+.signup-area { text-align:center; color:#7a85a5; font-size:14px; }
+.signup-link { color:#cfc3ff; text-decoration:none; font-weight:500; margin-left:8px; }
+.signup-link:hover { text-decoration:underline; color:#e0d6ff; }
+.login-footer { margin-top:34px; display:flex; gap:28px; justify-content:center; font-size:11px; color:#5e6a88; text-transform:uppercase; letter-spacing:0.5px; }
+.login-footer a { color:#7a85a5; text-decoration:none; transition:color 0.2s; }
+.login-footer a:hover { color:#a89eff; }
+@media (max-width:720px) {
+  .login-container { flex-direction:column; border-radius:24px; }
+  .login-left { border-right:none; border-bottom:1px solid #2a2e4a; padding:36px 20px; }
+  .login-right { padding:40px 32px; }
+  .character-group { gap:20px; }
+}
+  </style>
+</head>
+<body>
+  <div id="view-login" class="view-login app-view" style="display:none">
+    <div class="login-container">
+      <div class="login-left">
+        <div class="character-group">
+          <div class="character" id="lc-char1">
+            <div class="head-wrapper"><div class="char-head"><div class="eyes"><div class="eye"><div class="pupil" id="lc-p1L"></div></div><div class="eye"><div class="pupil" id="lc-p1R"></div></div></div><div class="char-mouth"></div></div></div>
+            <div class="neck-dot"></div><div class="body-line"></div><div class="character-label">ECHO</div>
+          </div>
+          <div class="character" id="lc-char2">
+            <div class="head-wrapper"><div class="char-head"><div class="eyes"><div class="eye"><div class="pupil" id="lc-p2L"></div></div><div class="eye"><div class="pupil" id="lc-p2R"></div></div></div><div class="char-mouth"></div></div></div>
+            <div class="neck-dot"></div><div class="body-line" style="height:54px"></div><div class="character-label">RES</div>
+          </div>
+          <div class="character" id="lc-char3">
+            <div class="head-wrapper"><div class="char-head"><div class="eyes"><div class="eye"><div class="pupil" id="lc-p3L"></div></div><div class="eye"><div class="pupil" id="lc-p3R"></div></div></div><div class="char-mouth"></div></div></div>
+            <div class="neck-dot"></div><div class="body-line"></div><div class="character-label">NANCE</div>
+          </div>
+        </div>
+        <div class="left-hint">◈ YOUR EMOTIONAL FINGERPRINT ◈</div>
+      </div>
+      <div class="login-right">
+        <div class="login-logo">RESONANCE · ECHOPLAY</div>
+        <div class="login-title" id="lc-title">Sign in</div>
+        <div class="login-subtitle" id="lc-subtitle">Access your echo identity</div>
+        <div id="lc-error" style="display:none;background:rgba(255,80,100,0.12);border:1px solid rgba(255,80,100,0.3);border-radius:12px;padding:10px 16px;color:#ff8fa0;font-size:13px;margin-bottom:18px;"></div>
+        <div class="input-group"><label class="input-label">Nickname</label><input class="input-field" type="text" id="lc-nickname" placeholder="echo@resonance.io" autocomplete="username"></div>
+        <div class="input-group"><label class="input-label">Password</label><input class="input-field" type="password" id="lc-password" placeholder="········" autocomplete="current-password"><span class="toggle-password" id="lc-togglePwd"><i class="far fa-eye-slash" id="lc-eyeIcon"></i></span></div>
+        <div class="input-group" id="lc-confirmGroup" style="display:none"><label class="input-label">Confirm Password</label><input class="input-field" type="password" id="lc-confirm" placeholder="········" autocomplete="new-password"></div>
+        <div class="login-options" id="lc-loginOptions"><label class="remember-label"><input type="checkbox" id="lc-remember"> Remember me</label><a href="#" class="forgot-link">Forgot password?</a></div>
+        <button class="begin-btn" id="lc-beginBtn">Begin</button>
+        <div class="signup-area" id="lc-switchArea">New to Resonance? <a href="#" class="signup-link" id="lc-signupLink">Create an echo</a></div>
+        <div class="login-footer"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Help</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-test" class="view-test app-view" style="display:none">
+    <div class="top-nav"><div class="brand">Resonance EchoPlay</div><div class="nav-actions"><button id="to-profile" class="icon-btn"><i class="fas fa-user"></i></button></div></div>
+    <div class="main-wrap">
+      <div id="test-card" class="card">
+        <div class="stepper"><div class="step-dot"><span id="s-dot-0"></span></div><div class="step-dot"><span id="s-dot-1"></span></div><div class="step-dot"><span id="s-dot-2"></span></div><div class="step-dot"><span id="s-dot-3"></span></div></div>
+        <h2 class="step-title" id="step-title"></h2><p class="step-sub" id="step-sub"></p>
+        <div class="timer-line"><span id="step-time">20s</span><span id="step-info"></span></div>
+        <div class="timer-bar"><span id="step-timer-bar"></span></div>
+        <div class="step-canvas-wrap"><canvas id="step-canvas" class="step-canvas"></canvas><div class="center-pulse" id="center-pulse"></div></div>
+        <div class="step-controls"><button id="next-step" class="primary-btn">Next</button></div>
+      </div>
+      <div id="result-card" class="card" style="display:none">
+        <div class="result-layout">
+          <div><div class="type-head" id="type-head"></div><p id="type-basis" class="muted"></p><div class="mix-player"><button id="replay-mix" class="primary-btn">Replay Mix</button><canvas id="mix-wave"></canvas></div></div>
+          <div class="fortune-box"><h3 class="fortune-title">今日黄历</h3><div id="fortune-rating"></div><strong>宜</strong><ul id="fortune-dos" class="clean"></ul><strong>忌</strong><ul id="fortune-donts" class="clean"></ul><div id="fortune-lucky"></div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px"><h3 style="margin:0">同频留言墙</h3><div style="display:flex;gap:8px"><button id="retake-btn" class="ghost-btn">重测</button><button id="view-history-btn" class="ghost-btn">历史足迹</button></div></div>
+        <div class="wall-post"><input id="wall-input" maxlength="30" placeholder="留下今天的状态（最多30字）"><button id="wall-send" class="primary-btn">发布</button></div>
+        <div id="wall-list" class="wall-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-profile" class="view-profile app-view" style="display:none">
+    <!-- Dynamic Background Layer -->
+    <div class="profile-bg-layer">
+      <div class="gradient-bg" id="prof-gradientBg"></div>
+      <video id="prof-video1" class="bg-media bg-video" loop muted playsinline src="https://cdn.pixabay.com/video/2016/12/30/6984-197634069_tiny.mp4"></video>
+      <video id="prof-video2" class="bg-media bg-video" loop muted playsinline src="https://cdn.pixabay.com/video/2020/04/25/37268-415511580_tiny.mp4"></video>
+      <video id="prof-video3" class="bg-media bg-video" loop muted playsinline src="https://cdn.pixabay.com/video/2019/11/05/28775-371433269_tiny.mp4"></video>
+      <img id="prof-gif1" class="bg-media" src="https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif" alt="">
+      <img id="prof-gif2" class="bg-media" src="https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif" alt="">
+      <img id="prof-gif3" class="bg-media" src="https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif" alt="">
+    </div>
+
+    <!-- Background Switcher -->
+    <div class="bg-switcher">
+      <button class="bg-btn active" data-bg="gradient" title="Gradient"><i class="fas fa-palette"></i></button>
+      <button class="bg-btn" data-bg="video1" title="Particles"><i class="fas fa-circle-nodes"></i></button>
+      <button class="bg-btn" data-bg="video2" title="Starry"><i class="fas fa-star"></i></button>
+      <button class="bg-btn" data-bg="video3" title="Glow"><i class="fas fa-sun"></i></button>
+      <button class="bg-btn" data-bg="gif1" title="Cyber Rain"><i class="fas fa-cloud-rain"></i></button>
+      <button class="bg-btn" data-bg="gif2" title="Waves"><i class="fas fa-water"></i></button>
+      <button class="bg-btn" data-bg="gif3" title="Stars"><i class="fas fa-meteor"></i></button>
+    </div>
+
+    <!-- Settings Entry -->
+    <div class="settings-entry" id="prof-settingsBtn" title="Account Settings">
+      <i class="fas fa-cog"></i>
+    </div>
+
+    <!-- Now Playing Bar -->
+    <div class="now-playing" id="prof-nowPlaying">
+      <i class="fas fa-music"></i>
+      <span id="prof-nowPlayingText">Today's Echo Mix</span>
+      <div class="np-music-control" id="prof-musicToggle">
+        <i class="fas fa-play" id="prof-musicIcon"></i>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="profile-main">
+      <nav class="profile-navbar">
+        <div class="nav-brand" id="prof-backBtn">RESONANCE</div>
+        <div class="profile-nav-links">
+          <a href="#" id="prof-navBack">← Back to Test</a>
+          <a href="#" class="active">Profile</a>
+        </div>
+      </nav>
+
+      <div class="profile-welcome">
+        <div class="profile-greeting">HI MY ECHO FRIEND</div>
+        <div class="profile-name">Hello, <span id="prof-displayName">EchoUser</span></div>
+        <div class="profile-tagline" id="prof-displayTagline">Your emotional fingerprint, captured daily.</div>
+      </div>
+
+      <div class="profile-grid">
+        <!-- Left Card -->
+        <div class="profile-left-card">
+          <div class="avatar-section">
+            <div class="profile-avatar" id="prof-mainAvatar">
+              <i class="fas fa-user-astronaut" id="prof-mainAvatarIcon"></i>
+            </div>
+            <div class="profile-username" id="prof-displayUsername">EchoUser</div>
+            <div class="profile-user-title">ECHO IDENTITY</div>
+            <div class="type-badge" id="prof-typeBadge">🪨 The Anchor</div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon"><i class="fas fa-calendar-star"></i></div>
+            <div class="info-content">
+              <div class="info-label">Today's Type</div>
+              <div class="info-value" id="prof-todayType">—</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon"><i class="fas fa-history"></i></div>
+            <div class="info-content">
+              <div class="info-label">Tests Completed</div>
+              <div class="info-value" id="prof-testCount">0</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon"><i class="fas fa-map-pin"></i></div>
+            <div class="info-content">
+              <div class="info-label">Location</div>
+              <div class="info-value" id="prof-displayLocation">Earth · Milky Way</div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon"><i class="fas fa-heart"></i></div>
+            <div class="info-content">
+              <div class="info-label">Status</div>
+              <div class="info-value" id="prof-displayStatus">✨ Stay Curious</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Content -->
+        <div class="profile-right">
+
+          <!-- Today's Mix Player -->
+          <div class="profile-card">
+            <div class="section-header">
+              <i class="fas fa-waveform-lines"></i>
+              <h3>Today's Echo Mix</h3>
+            </div>
+            <canvas class="mix-waveform-canvas" id="prof-waveCanvas"></canvas>
+            <div class="mix-controls">
+              <button class="mix-play-btn" id="prof-replayBtn">
+                <i class="fas fa-play"></i> Replay Mix
+              </button>
+              <span class="mix-label" id="prof-mixLabel">40s · Generated from your session</span>
+            </div>
+          </div>
+
+          <!-- History Timeline -->
+          <div class="profile-card">
+            <div class="section-header">
+              <i class="fas fa-timeline"></i>
+              <h3>Echo History · Past 7 Days</h3>
+            </div>
+            <div class="history-timeline" id="prof-historyList"></div>
+          </div>
+
+          <!-- Echo Stats -->
+          <div class="profile-card">
+            <div class="section-header">
+              <i class="fas fa-chart-bar"></i>
+              <h3>Echo Stats</h3>
+            </div>
+            <div class="stats-row">
+              <div class="stat-block">
+                <div class="stat-number" id="prof-statTotal">0</div>
+                <div class="stat-label">Total Tests</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-number" id="prof-statStreak">0</div>
+                <div class="stat-label">Day Streak</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-number" id="prof-statFavType">—</div>
+                <div class="stat-label">Most Common</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:24px">
+              <button id="prof-logoutBtn" class="ghost-btn">退出登录</button>
+              <button id="prof-clearHistoryBtn" class="ghost-btn">清空历史</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="glow-line"></div>
+
+    <!-- Settings Overlay -->
+    <div class="settings-overlay" id="prof-settingsOverlay">
+      <div class="settings-container">
+        <div class="settings-header">
+          <h2>Account Settings</h2>
+          <div class="close-settings" id="prof-closeSettings"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="settings-card">
+          <div class="card-title"><i class="fas fa-user-circle"></i> Profile</div>
+          <div class="avatar-section-settings">
+            <div class="current-avatar" id="prof-settingsAvatar">
+              <i class="fas fa-user-astronaut" id="prof-settingsAvatarIcon"></i>
+            </div>
+            <div class="avatar-presets" id="prof-avatarPresets"></div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Display Name</label>
+              <input type="text" class="form-input" id="prof-settingsName" placeholder="Your name">
+            </div>
+            <div class="form-group">
+              <label>Location</label>
+              <input type="text" class="form-input" id="prof-settingsLocation" placeholder="Earth · Milky Way">
+            </div>
+            <div class="form-group full-width">
+              <label>Bio / Status</label>
+              <input type="text" class="form-input" id="prof-settingsBio" placeholder="✨ Stay Curious">
+            </div>
+          </div>
+        </div>
+        <button class="save-settings-btn" id="prof-saveBtn">Save Changes</button>
+      </div>
+    </div>
+
+    <div class="toast-message" id="prof-toast"><span id="prof-toastText">✓ Settings saved!</span></div>
+  </div>
+
+  <script>
+const TYPE_DB = [
+  { id:"driver", code:"ACT_01", center:[0.85,0.80,0.75,0.30], name:{ zh:"⚡ 专注行动派", en:"The Driver" }, psychology_basis:"高唤醒+积极效价 → 心流状态。交感神经适度激活，执行功能占优。", daily_fortune:{ rating:"⭐⭐⭐⭐ 宜推进，忌内耗", dos:["推进卡住的任务","做关键决策","高强度运动/有氧"], donts:["过度反思","纠结细节","深夜刷手机"], lucky_activity:"✅ 适合开会/谈判/健身/清单打勾" }, messages_pool:[{uid:"行动者#F2A",text:"今天把拖了一周的需求全清了，爽！",likes:12},{uid:"行动者#B8C",text:"晨跑5公里，多巴胺直接拉满。",likes:8},{uid:"行动者#D1E",text:"抽卡十连双金，今日宜all in。",likes:15}] },
+  { id:"storm", code:"REL_02", center:[0.80,0.20,0.40,0.60], name:{ zh:"🌪 情绪释放者", en:"The Storm" }, psychology_basis:"高唤醒+低效价 → 情绪宣泄期。边缘系统活跃，需安全外化通道。", daily_fortune:{ rating:"🌧 宜释放，忌压抑", dos:["写日记/语音备忘录","听重型/氛围音乐","独处放空"], donts:["强撑社交","做冲动决定","熬夜"], lucky_activity:"✅ 适合大哭一场/打沙袋/看悲剧电影" }, messages_pool:[{uid:"释放者#K9L",text:"今天允许自己摆烂半天，反而轻松了。",likes:21},{uid:"释放者#P3M",text:"把委屈写下来，撕掉，舒服多了。",likes:18},{uid:"释放者#R7N",text:"抽卡全保底，但今天不想生气，随它吧。",likes:14}] },
+  { id:"healer", code:"RES_03", center:[0.30,0.75,0.55,0.50], name:{ zh:"🌿 温和疗愈型", en:"The Healer" }, psychology_basis:"低唤醒+积极效价 → 副交感主导。自我修复期，心理韧性正在回血。", daily_fortune:{ rating:"🌼 宜充电，忌透支", dos:["散步/泡脚/热水澡","听自然白噪音","整理桌面"], donts:["接高压任务","强行社交","喝浓咖啡"], lucky_activity:"✅ 适合泡茶/晒太阳/看治愈系动漫" }, messages_pool:[{uid:"疗愈者#W4Q",text:"今天只做了三件事：吃饭、睡觉、散步。刚刚好。",likes:27},{uid:"疗愈者#Y8T",text:"工作顺利到不可思议，像开了自动挡。",likes:19},{uid:"疗愈者#Z2U",text:"抽卡没出金，但喝了杯好喝的奶茶，赚了。",likes:16}] },
+  { id:"observer", code:"INT_04", center:[0.25,0.50,0.80,0.75], name:{ zh:"🌙 内省沉思者", en:"The Observer" }, psychology_basis:"低唤醒+中性效价 → DMN活跃。深度自我对话与意义建构期。", daily_fortune:{ rating:"🔭 宜沉淀，忌决断", dos:["阅读/看纪录片","整理旧照片/笔记","冥想10分钟"], donts:["签长期合同","回应情绪化消息","赶DDL"], lucky_activity:"✅ 适合写周复盘/听播客/泡咖啡馆发呆" }, messages_pool:[{uid:"沉思者#A1B",text:"今天突然想通了一件纠结半年的事。",likes:33},{uid:"沉思者#C5D",text:"工作效率不高，但想明白了一个底层逻辑。",likes:22},{uid:"沉思者#E9F",text:"抽卡沉船，但发现游戏机制其实挺有意思的。",likes:11}] },
+  { id:"explorer", code:"OPN_05", center:[0.60,0.70,0.50,0.20], name:{ zh:"🌌 漫游好奇型", en:"The Explorer" }, psychology_basis:"中唤醒+高开放性 → 经验探索峰值。多巴胺通路活跃，认知灵活性高。", daily_fortune:{ rating:"🌠 宜尝鲜，忌按部就班", dos:["走新路线/探新店","接触跨界内容","和陌生人聊天"], donts:["死磕SOP","拒绝新想法","久坐不动"], lucky_activity:"✅ 适合试玩新游戏/看独立电影/学冷门技能" }, messages_pool:[{uid:"漫游者#G3H",text:"今天走了条没走过的路，发现了家超棒的面馆。",likes:24},{uid:"漫游者#J7K",text:"工作突然来了个新方向，越聊越兴奋。",likes:18},{uid:"漫游者#L2M",text:"抽卡没中，但歪到的角色意外的好玩。",likes:15}] },
+  { id:"spark", code:"CRE_06", center:[0.65,0.65,0.30,0.40], name:{ zh:"✨ 灵感迸发型", en:"The Spark" }, psychology_basis:"高变异性+中唤醒 → 发散思维高峰。前额叶抑制减弱，联想力爆发。", daily_fortune:{ rating:"💡 宜记录，忌死磕", dos:["抓碎片灵感/画草图","头脑风暴","自由写作"], donts:["追求完美排版","立刻执行","跟他人争论细节"], lucky_activity:"✅ 适合建备忘录/做原型/听实验音乐" }, messages_pool:[{uid:"灵感者#N6O",text:"今天脑子里蹦出3个点子，赶紧记下了。",likes:29},{uid:"灵感者#P1Q",text:"改需求改到一半突然有了新思路，绝了。",likes:20},{uid:"灵感者#R5S",text:"抽卡玄学：先画符再抽，居然真出了。",likes:17}] },
+  { id:"anchor", code:"BAL_07", center:[0.50,0.55,0.60,0.55], name:{ zh:"🪨 平衡扎根型", en:"The Anchor" }, psychology_basis:"参数均衡 → 情绪调节稳态。自主神经平衡，心理韧性最佳区间。", daily_fortune:{ rating:"🌳 宜托底，忌冒进", dos:["做中长期规划","协调人际关系","整理财务/文件"], donts:["赌运气/加杠杆","突然跳槽","过度熬夜"], lucky_activity:"✅ 适合排期/对账/陪家人/做收纳" }, messages_pool:[{uid:"扎根者#T8U",text:"今天一切按计划进行，稳稳的幸福。",likes:31},{uid:"扎根者#V2W",text:"工作不忙不累，刚好把家里收拾了。",likes:25},{uid:"扎根者#X6Y",text:"抽卡没爆但也没歪，今日宜稳健。",likes:13}] }
+];
+const SCALE_PATTERNS = { 0:[0,2,4,5,7,9,11], 1:[0,2,3,5,7,9,10], 2:[0,1,3,5,7,8,10], 3:[0,2,4,6,7,9,11], 4:[0,2,4,5,7,9,10], 5:[0,2,3,5,7,8,10], 6:[0,1,3,5,6,8,10] };
+function escapeHTML(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function getTodayKey() { return 'resonance_'+new Date().toISOString().slice(0,10); }
+function euclideanDist(a,b) { return Math.sqrt(a.reduce((s,v,i)=>s+(v-b[i])**2,0)); }
+function quantizeToScale(midi, modeIdx, root=60) { const maxMode=Object.keys(SCALE_PATTERNS).length-1; const scale=SCALE_PATTERNS[Math.max(0,Math.min(maxMode,modeIdx|0))]||SCALE_PATTERNS[0]; const oct=Math.floor((midi-root)/12), pc=((midi-root)%12+12)%12; let best=scale[0], min=Infinity; scale.forEach(v=>{const d=Math.abs(v-pc); if(d<min){min=d;best=v;}}); return root+oct*12+best; }
+function saveAccounts(a){ try{ localStorage.setItem('resonance_accounts', JSON.stringify(a)); }catch(e){} }
+function loadAccounts(){ try{ return JSON.parse(localStorage.getItem('resonance_accounts'))||{}; }catch(e){ return {}; } }
+async function hashPwd(pwd){ const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pwd)); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+
+function loadUser(){ try{ return JSON.parse(localStorage.getItem('resonance_user')); }catch(e){ return null; } }
+function saveTodayData(d){ try{ localStorage.setItem(getTodayKey(), JSON.stringify(d)); }catch(e){} }
+function loadTodayData(){ try{ return JSON.parse(localStorage.getItem(getTodayKey())); }catch(e){ return null; } }
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem('resonance_history'))||[]; }catch(e){ return []; } }
+function saveHistory(h){ try{ localStorage.setItem('resonance_history', JSON.stringify(h.slice(0,30))); }catch(e){} }
+function checkDailyReset(){ const keep=new Set(['resonance_history','resonance_user']); try{ if(!localStorage.getItem(getTodayKey())){ const rm=[]; const len=localStorage.length; for(let i=0;i<len;i++){const k=localStorage.key(i); if(k&&k.startsWith('resonance_')&&!keep.has(k)) rm.push(k);} rm.forEach(k=>localStorage.removeItem(k)); } }catch(e){} }
+function saveWall(typeId,arr){ try{ localStorage.setItem('resonance_wall_'+typeId, JSON.stringify(arr.slice(0,50))); }catch(e){} }
+function loadWall(typeId){ try{ return JSON.parse(localStorage.getItem('resonance_wall_'+typeId))||[]; }catch(e){ return []; } }
+const sessionConfig={rhythm:{},harmony:{},melody:{},space:{}}; let audioCtx=null,currentUser=null,currentStep=0,stepTimer=null,stepTick=null,stepEndsAt=0,activeType=null,lastMixRunner=null,loginViewDisposer=null;
+const stepTitles=['Step 1 · Rhythm','Step 2 · Harmony','Step 3 · Melody','Step 4 · Space'];
+const stepSubs=['Tap the canvas to create your pulse.','Drag the glowing orb: X brightness, Y tension.','Draw a melodic line; release to quantized playback.','Drag listening point: center dry, corners spacious.'];
+function showView(name){ document.getElementById('view-login').style.display=name==='LOGIN'?'flex':'none'; document.getElementById('view-test').style.display=name==='TEST'?'block':'none'; document.getElementById('view-profile').style.display=name==='PROFILE'?'block':'none'; }
+function initAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); return audioCtx; }
+function setupCanvas(c){ const dpr=window.devicePixelRatio||1, r=c.getBoundingClientRect(); c.width=Math.max(1,Math.floor(r.width*dpr)); c.height=Math.max(1,Math.floor(r.height*dpr)); const x=c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); return {ctx:x,w:r.width,h:r.height}; }
+let cleanupStep=()=>{};
+function clearTimer(){ clearInterval(stepTick); clearTimeout(stepTimer); }
+function startStep(n){ clearTimer(); cleanupStep(); currentStep=n; document.getElementById('step-title').textContent=stepTitles[n]; document.getElementById('step-sub').textContent=stepSubs[n]; document.getElementById('step-info').textContent=`${n+1}/4`; for(let i=0;i<4;i++) document.getElementById(`s-dot-${i}`).style.width=i<n?'100%':(i===n?'50%':'0%'); [startStepRhythm,startStepHarmony,startStepMelody,startStepSpace][n](); startCountdown(); }
+function startCountdown(){ const total=20; stepEndsAt=performance.now()+total*1000; const timeEl=document.getElementById('step-time'),bar=document.getElementById('step-timer-bar'); stepTick=setInterval(()=>{const rem=Math.max(0,stepEndsAt-performance.now()); timeEl.textContent=`${Math.ceil(rem/1000)}s`; bar.style.width=`${(rem/(total*1000))*100}%`;},100); stepTimer=setTimeout(()=>nextStep(), total*1000); }
+function nextStep(){ if(currentStep<3) startStep(currentStep+1); else completeTest(); }
+function startStepRhythm(){ const pulse=document.getElementById('center-pulse'),canvas=document.getElementById('step-canvas'),{ctx,w,h}=setupCanvas(canvas); let taps=[]; const points=[]; let rafId=0; function beep(){ const ac=initAudio(),t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.value=60+Math.random()*60; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.45,t+.001); g.gain.exponentialRampToValueAtTime(.001,t+.151); o.connect(g).connect(ac.destination); o.start(t); o.stop(t+.18); o.onended=()=>{o.disconnect();g.disconnect();}; } canvas.onpointerdown=e=>{ const r=canvas.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top; points.push({x,y,t:performance.now()}); taps.push(performance.now()); pulse.classList.remove('active'); void pulse.offsetWidth; pulse.classList.add('active'); beep(); }; (function draw(){ ctx.clearRect(0,0,w,h); ctx.fillStyle='rgba(183,169,255,.85)'; points.slice(-150).forEach((p,i)=>{ctx.globalAlpha=i/Math.max(1,points.length); ctx.beginPath(); ctx.arc(p.x,p.y,2.5,0,Math.PI*2); ctx.fill();}); rafId=requestAnimationFrame(draw); })(); cleanupStep=()=>{ cancelAnimationFrame(rafId); canvas.onpointerdown=null; if(taps.length<2){ sessionConfig.rhythm={bpm:90,density:.2,stability:.5,taps:[]}; return; } const ints=[]; for(let i=1;i<taps.length;i++) ints.push((taps[i]-taps[i-1])/1000); const avg=ints.reduce((a,b)=>a+b,0)/ints.length, v=ints.reduce((s,x)=>s+(x-avg)*(x-avg),0)/ints.length; sessionConfig.rhythm={ bpm:Math.max(60,Math.min(140,60/Math.max(.2,avg))), density:Math.max(0,Math.min(1,taps.length/30)), stability:Math.max(0,Math.min(1,1/(1+v*10))), taps:ints }; }; }
+function startStepHarmony(){ const canvas=document.getElementById('step-canvas'),{ctx,w,h}=setupCanvas(canvas),orb={x:w*.5,y:h*.5}; const path=[]; let drag=false; let rafId=0; const ac=initAudio(),hp=ac.createBiquadFilter(),lp=ac.createBiquadFilter(),g=ac.createGain(); hp.type='highpass'; hp.frequency.value=120; lp.type='lowpass'; lp.frequency.value=1200; g.gain.value=.15; const oscs=[261.63,329.63,392,493.88].map(f=>{const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=f; o.connect(hp); o.start(); return o;}); hp.connect(lp).connect(g).connect(ac.destination); function sync(){ const x=orb.x/w,y=orb.y/h; lp.frequency.setTargetAtTime(400+x*3000,ac.currentTime,.08); g.gain.setTargetAtTime(.08+(1-y)*.2,ac.currentTime,.08); } function mv(e){ const r=canvas.getBoundingClientRect(); orb.x=Math.max(12,Math.min(w-12,e.clientX-r.left)); orb.y=Math.max(12,Math.min(h-12,e.clientY-r.top)); path.push({x:orb.x/w,y:orb.y/h,t:performance.now()}); sync(); } canvas.onpointerdown=e=>{drag=true;mv(e)}; canvas.onpointermove=e=>drag&&mv(e); const up=()=>drag=false; window.addEventListener('pointerup',up); (function draw(){ ctx.clearRect(0,0,w,h); const grd=ctx.createLinearGradient(0,0,w,0); grd.addColorStop(0,'#2f3a58'); grd.addColorStop(1,'#7f6af0'); ctx.fillStyle=grd; ctx.globalAlpha=.25; ctx.fillRect(0,0,w,h); ctx.globalAlpha=1; ctx.fillStyle='rgba(183,169,255,.95)'; ctx.shadowBlur=20; ctx.shadowColor='rgba(183,169,255,.9)'; ctx.beginPath(); ctx.arc(orb.x,orb.y,14,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; rafId=requestAnimationFrame(draw); })(); cleanupStep=()=>{ cancelAnimationFrame(rafId); canvas.onpointerdown=canvas.onpointermove=null; window.removeEventListener('pointerup',up); const tNow=ac.currentTime; g.gain.setTargetAtTime(0,tNow,.06); oscs.forEach(o=>{o.stop(tNow+.12); o.onended=()=>o.disconnect();}); setTimeout(()=>{hp.disconnect();lp.disconnect();g.disconnect();},220); const arr=path.length?path:[{x:.5,y:.5,t:performance.now()}], xs=arr.map(p=>p.x), ys=arr.map(p=>p.y), b=xs.reduce((a,z)=>a+z,0)/xs.length, t=ys.reduce((a,z)=>a+z,0)/ys.length; let ch=0; for(let i=1;i<arr.length;i++){const dx=arr[i].x-arr[i-1].x,dy=arr[i].y-arr[i-1].y; ch+=Math.sqrt(dx*dx+dy*dy);} sessionConfig.harmony={ modeIndex:Math.max(0,Math.min(6,Math.floor(b*7))), brightness:b, tension:t, changeRate:Math.max(0,Math.min(1,ch/4)) }; }; }
+function startStepMelody(){ const canvas=document.getElementById('step-canvas'),{ctx,w,h}=setupCanvas(canvas); const lines=[]; let drawOn=false; const ac=initAudio(); function add(e){const r=canvas.getBoundingClientRect(); lines.push({x:Math.max(0,Math.min(w,e.clientX-r.left)),y:Math.max(0,Math.min(h,e.clientY-r.top)),t:performance.now()});} canvas.onpointerdown=e=>{drawOn=true;add(e)}; canvas.onpointermove=e=>drawOn&&add(e); canvas.onpointerup=()=>{drawOn=false;play()}; function patt(){ if(!lines.length) return [60,62,64,67]; let s=lines; if(s.length>150){const k=s.length/100,c=[]; for(let i=0;i<100;i++) c.push(s[Math.floor(i*k)]); s=c;} const n=Math.min(12,Math.max(4,Math.floor(s.length/8))),p=[]; for(let i=0;i<n;i++){ const q=s[Math.floor((i/(n-1))*(s.length-1))],yn=1-q.y/h,m=quantizeToScale(Math.round(52+yn*28),sessionConfig.harmony.modeIndex||0,60); p.push(m);} return p; } function play(){ const p=patt(),now=ac.currentTime; p.forEach((m,i)=>{ const t=now+i*.18,o=ac.createOscillator(),g=ac.createGain(); o.type='square'; o.frequency.value=440*Math.pow(2,(m-69)/12); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.12,t+.01); g.gain.exponentialRampToValueAtTime(.001,t+.16); o.connect(g).connect(ac.destination); o.start(t); o.stop(t+.18); o.onended=()=>{o.disconnect();g.disconnect();}; }); } (function draw(){ ctx.clearRect(0,0,w,h); ctx.strokeStyle='rgba(143,122,255,.35)'; for(let i=1;i<6;i++){ctx.beginPath();ctx.moveTo(0,(h/6)*i);ctx.lineTo(w,(h/6)*i);ctx.stroke();} if(lines.length){ctx.strokeStyle='rgba(183,169,255,.95)'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(lines[0].x,lines[0].y); for(let i=1;i<lines.length;i++) ctx.lineTo(lines[i].x,lines[i].y); ctx.stroke();} requestAnimationFrame(draw); })(); cleanupStep=()=>{ canvas.onpointerdown=canvas.onpointermove=canvas.onpointerup=null; const p=patt(),avg=p.reduce((a,b)=>a+b,0)/p.length,cont=Math.min(1,Math.abs(p[p.length-1]-p[0])/12); let mot=0; for(let i=1;i<p.length;i++) mot+=Math.abs(p[i]-p[i-1]); sessionConfig.melody={ contour:cont, avgPitch:Math.max(0,Math.min(1,(avg-48)/36)), notePattern:p.slice(0,12), phrasing:Math.min(1,mot/(p.length*4)) }; }; }
+function startStepSpace(){ const canvas=document.getElementById('step-canvas'),{ctx,w,h}=setupCanvas(canvas),p={x:w/2,y:h/2}; let drag=false; let rafId=0; const ac=initAudio(),buf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),dat=buf.getChannelData(0); for(let i=0;i<dat.length;i++) dat[i]=Math.random()*2-1; const src=ac.createBufferSource(); src.buffer=buf; src.loop=true; const dry=ac.createGain(),wet=ac.createGain(),out=ac.createGain(),filter=ac.createBiquadFilter(),d1=ac.createDelay(1),d2=ac.createDelay(1),ap=ac.createBiquadFilter(),fb=ac.createGain(),pan=ac.createStereoPanner(); filter.type='lowpass'; filter.frequency.value=2600; ap.type='allpass'; ap.frequency.value=900; d1.delayTime.value=.18; d2.delayTime.value=.27; fb.gain.value=.35; src.connect(filter); filter.connect(dry); filter.connect(d1); d1.connect(d2); d2.connect(ap); ap.connect(wet); ap.connect(fb); fb.connect(d1); dry.connect(out); wet.connect(out); out.connect(pan).connect(ac.destination); out.gain.value=.2; src.start(); function sync(){ const nx=p.x/w,ny=p.y/h,dx=Math.abs(nx-.5)*2,dy=Math.abs(ny-.5)*2,r=Math.min(1,Math.sqrt(dx*dx+dy*dy)); dry.gain.setTargetAtTime(0.45-r*.4,ac.currentTime,.08); wet.gain.setTargetAtTime(.08+r*.55,ac.currentTime,.08); fb.gain.setTargetAtTime(.2+r*.7,ac.currentTime,.12); filter.frequency.setTargetAtTime(800+(1-ny)*3200,ac.currentTime,.08); pan.pan.setTargetAtTime((nx-.5)*2,ac.currentTime,.08); } sync(); function mv(e){ const r=canvas.getBoundingClientRect(); p.x=Math.max(12,Math.min(w-12,e.clientX-r.left)); p.y=Math.max(12,Math.min(h-12,e.clientY-r.top)); sync(); } canvas.onpointerdown=e=>{drag=true;mv(e)}; canvas.onpointermove=e=>drag&&mv(e); const up=()=>drag=false; window.addEventListener('pointerup',up); (function draw(){ ctx.clearRect(0,0,w,h); const grd=ctx.createRadialGradient(w/2,h/2,20,w/2,h/2,Math.max(w,h)*0.7); grd.addColorStop(0,'rgba(183,169,255,.12)'); grd.addColorStop(1,'rgba(127,106,240,.35)'); ctx.fillStyle=grd; ctx.fillRect(0,0,w,h); ctx.fillStyle='rgba(183,169,255,.95)'; ctx.beginPath(); ctx.arc(p.x,p.y,13,0,Math.PI*2); ctx.fill(); rafId=requestAnimationFrame(draw); })(); cleanupStep=()=>{ cancelAnimationFrame(rafId); canvas.onpointerdown=canvas.onpointermove=null; window.removeEventListener('pointerup',up); const tNow=ac.currentTime; out.gain.setTargetAtTime(0,tNow,.08); src.stop(tNow+.12); src.onended=()=>{src.disconnect(); dry.disconnect(); wet.disconnect(); out.disconnect(); filter.disconnect(); d1.disconnect(); d2.disconnect(); ap.disconnect(); fb.disconnect(); pan.disconnect();}; const nx=p.x/w,ny=p.y/h,dx=Math.abs(nx-.5)*2,dy=Math.abs(ny-.5)*2,r=Math.min(1,Math.sqrt(dx*dx+dy*dy)); sessionConfig.space={reverbDecay:r,delayFeedback:Math.min(1,.2+r*.7),filterCutoff:Math.max(0,Math.min(1,(800+(1-ny)*3200)/4000)),stereoWidth:Math.abs((nx-.5)*2)}; }; }
+function computePsychVector(config){ const r=config.rhythm||{},h=config.harmony||{},m=config.melody||{},s=config.space||{}; const arousal=Math.max(0,Math.min(1,0.45*(r.density||0)+0.25*(r.bpm?(r.bpm-60)/80:0)+0.3*(h.tension||0))); const valence=Math.max(0,Math.min(1,0.55*(h.brightness||0)+0.25*(1-(s.reverbDecay||0))+0.2*(1-(h.tension||0)))); const focus=Math.max(0,Math.min(1,0.45*(r.stability||0)+0.35*(1-(m.phrasing||0))+0.2*(1-(h.changeRate||0)))); const boundary=Math.max(0,Math.min(1,0.5*(s.reverbDecay||0)+0.2*(s.stereoWidth||0)+0.3*(h.tension||0))); return [arousal,valence,focus,boundary]; }
+function matchType(vector){ return TYPE_DB.reduce((best,t)=>{ const d=euclideanDist(vector,t.center); return d<best.d?{t,d}:best; },{d:Infinity}).t; }
+function generateFinalMix(config){ const ac=initAudio(); if(lastMixRunner){ lastMixRunner.stop?.(); } const analyser=ac.createAnalyser(); analyser.fftSize=2048; const comp=ac.createDynamicsCompressor(),master=ac.createGain(); comp.threshold.value=-24; comp.ratio.value=3; master.gain.value=.0001; comp.connect(master).connect(analyser).connect(ac.destination); const bpm=Math.max(60,Math.min(140,config.rhythm.bpm||92)),beat=60/bpm,grid=beat/2,len=42,t0=ac.currentTime+.08; master.gain.exponentialRampToValueAtTime(.85,t0+.6); master.gain.setTargetAtTime(.0001,t0+len-1,.5); function kick(t){const o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(45,t+.12); g.gain.setValueAtTime(.001,t); g.gain.exponentialRampToValueAtTime(.45,t+.005); g.gain.exponentialRampToValueAtTime(.001,t+.2); o.connect(g).connect(comp); o.start(t); o.stop(t+.22);} function hat(t){const b=ac.createBuffer(1,ac.sampleRate*.04,ac.sampleRate),d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; const s=ac.createBufferSource(),hp=ac.createBiquadFilter(),g=ac.createGain(); s.buffer=b; hp.type='highpass'; hp.frequency.value=6000; g.gain.value=.08; s.connect(hp).connect(g).connect(comp); s.start(t); s.stop(t+.04);} for(let t=t0;t<t0+len;t+=beat) kick(t); for(let t=t0+beat/2;t<t0+len;t+=beat/2) if(Math.random()<0.86) hat(t); const mode=config.harmony.modeIndex||0,raw=(config.melody.notePattern||[60,62,64,67]).map(n=>quantizeToScale(n,mode,60)),seq=[]; for(let i=0;i<Math.ceil(len/(grid*raw.length));i++) seq.push(...raw); for(let i=0;i<seq.length;i++){ const t=t0+i*grid; if(t>t0+len-1) break; const o=ac.createOscillator(),g=ac.createGain(); o.type='square'; o.frequency.value=440*Math.pow(2,(seq[i]-69)/12); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.1,t+.015); g.gain.exponentialRampToValueAtTime(.001,t+grid*.88); o.connect(g).connect(comp); o.start(t); o.stop(t+grid*.92); } drawWaveform(analyser,document.getElementById('mix-wave'),t0+len); lastMixRunner={stop(){ master.gain.cancelScheduledValues(ac.currentTime); master.gain.setTargetAtTime(.0001,ac.currentTime,.05); }}; }
+function drawWaveform(analyser,canvas,stopAt){ const dpr=window.devicePixelRatio||1,r=canvas.getBoundingClientRect(); canvas.width=r.width*dpr; canvas.height=r.height*dpr; const c=canvas.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); const arr=new Uint8Array(analyser.fftSize); (function frame(){ if(audioCtx&&audioCtx.currentTime>stopAt+.2) return; analyser.getByteTimeDomainData(arr); c.clearRect(0,0,r.width,r.height); c.strokeStyle='rgba(143,122,255,.95)'; c.lineWidth=2; c.beginPath(); const max=110,step=Math.max(1,Math.floor(arr.length/max)); let idx=0; for(let i=0;i<arr.length;i+=step){const x=idx/(Math.ceil(arr.length/step)-1)*r.width,y=(arr[i]/255)*r.height; idx===0?c.moveTo(x,y):c.lineTo(x,y); idx++;} c.stroke(); requestAnimationFrame(frame); })(); }
+function renderVibeWall(typeId){ const type=TYPE_DB.find(t=>t.id===typeId)||TYPE_DB[6],listEl=document.getElementById('wall-list'),liked=JSON.parse(localStorage.getItem('resonance_wall_liked')||'{}'); const presets=[...type.messages_pool].sort((a,b)=>b.likes-a.likes).map((m,i)=>({...m,_id:'preset_'+i})),userMsgs=loadWall(typeId).map(m=>({...m,_id:m.id||('u'+Math.random())})),all=[...presets,...userMsgs].slice(0,50); listEl.innerHTML=''; all.forEach(m=>{ const row=document.createElement('div'); row.className='wall-item'; const left=document.createElement('div'); left.innerHTML=`<div>${escapeHTML(m.text)}</div><div class="wall-meta">${escapeHTML(m.uid)}</div>`; const right=document.createElement('button'); right.className='like-btn'+(liked[m._id]?' liked':''); right.innerHTML=`<i class="fas fa-heart"></i> ${m.likes+(liked[m._id]?1:0)}`; right.onclick=()=>{ liked[m._id]=!liked[m._id]; localStorage.setItem('resonance_wall_liked',JSON.stringify(liked)); renderVibeWall(typeId); }; row.append(left,right); listEl.appendChild(row); }); }
+function renderResultPage(type,config){ activeType=type; document.getElementById('test-card').style.display='none'; document.getElementById('result-card').style.display='block'; document.getElementById('type-head').innerHTML=`<i class="fas fa-wave-square"></i><div><div>${type.name.zh}</div><div class="muted" style="font-size:14px">${type.name.en} · ${type.code}</div></div>`; document.getElementById('type-basis').textContent=type.psychology_basis; document.getElementById('fortune-rating').textContent=type.daily_fortune.rating; document.getElementById('fortune-dos').innerHTML=type.daily_fortune.dos.map(v=>`<li>${escapeHTML(v)}</li>`).join(''); document.getElementById('fortune-donts').innerHTML=type.daily_fortune.donts.map(v=>`<li>${escapeHTML(v)}</li>`).join(''); document.getElementById('fortune-lucky').textContent=type.daily_fortune.lucky_activity; document.getElementById('replay-mix').onclick=()=>generateFinalMix(config); renderVibeWall(type.id); }
+function completeTest(){ cleanupStep(); clearTimer(); const vec=computePsychVector(sessionConfig),type=matchType(vec)||TYPE_DB[6]; const todayData={sessionConfig:JSON.parse(JSON.stringify(sessionConfig)),type,completed:true}; saveTodayData(todayData); const hist=loadHistory(); hist.unshift({date:new Date().toISOString().slice(0,10),typeId:type.id,summary:type.name.zh}); saveHistory(hist.slice(0,30)); generateFinalMix(sessionConfig); renderResultPage(type,sessionConfig); }
+function initTestView(){ document.getElementById('next-step').onclick=()=>nextStep(); document.getElementById('to-profile').onclick=()=>{showView('PROFILE'); initProfileView();}; document.getElementById('view-history-btn').onclick=()=>{showView('PROFILE'); initProfileView();}; document.getElementById('retake-btn').onclick=()=>{ try{ localStorage.removeItem(getTodayKey()); }catch(e){} sessionConfig.rhythm={}; sessionConfig.harmony={}; sessionConfig.melody={}; sessionConfig.space={}; document.getElementById('result-card').style.display='none'; document.getElementById('test-card').style.display='block'; startStep(0); }; document.getElementById('wall-send').onclick=()=>{ if(!activeType||!currentUser) return; const input=document.getElementById('wall-input'),t=escapeHTML(input.value.trim().slice(0,30)); if(!t) return; const arr=loadWall(activeType.id); const rand=window.crypto?.randomUUID?.().replace(/-/g,'').slice(0,4).toUpperCase()||Math.random().toString(16).slice(2,6).toUpperCase(); arr.unshift({id:'u_'+Date.now(),uid:'匿名#'+rand,text:t,likes:0}); saveWall(activeType.id,arr.slice(0,50)); input.value=''; renderVibeWall(activeType.id); }; }
+function initProfileView(){
+  const user=loadUser()||{};
+  if(!loadUser()){ showView('LOGIN'); initLoginView(); return; }
+  const todayData=loadTodayData()||{};
+  const history=(()=>{ try{ return JSON.parse(localStorage.getItem('resonance_history'))||[]; }catch(e){ return []; } })();
+
+  /* ---- 填充用户信息 ---- */
+  const setTxt=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  setTxt('prof-displayName',     user.nickname||'EchoUser');
+  setTxt('prof-displayUsername', user.nickname||'EchoUser');
+  const avatar=(user.avatar||'fa-user-astronaut').replace(/^fa-/,'');
+  document.getElementById('prof-mainAvatarIcon').className     ='fas fa-'+avatar;
+  document.getElementById('prof-settingsAvatarIcon').className ='fas fa-'+avatar;
+  document.getElementById('prof-settingsName').value    =user.nickname||'';
+  document.getElementById('prof-settingsLocation').value=user.location||'Earth · Milky Way';
+  document.getElementById('prof-settingsBio').value     =user.bio||'✨ Stay Curious';
+  setTxt('prof-displayLocation', user.location||'Earth · Milky Way');
+  setTxt('prof-displayStatus',   user.bio||'✨ Stay Curious');
+
+  /* ---- 今日类型 ---- */
+  if(todayData.type){
+    setTxt('prof-todayType', todayData.type.name.zh);
+    setTxt('prof-typeBadge', todayData.type.name.zh);
+    document.getElementById('prof-typeBadge').style.display='inline-flex';
+  }
+
+  /* ---- 历史足迹 ---- */
+  setTxt('prof-testCount', history.length);
+  setTxt('prof-statTotal', history.length);
+
+  /* 连续打卡天数 */
+  let streak=0;
+  const today=new Date();
+  for(let i=0;i<history.length;i++){
+    const d=new Date(history[i].date);
+    const diff=Math.round((today-d)/(1000*60*60*24));
+    if(i===0&&diff<=1) streak++;
+    else if(diff===i+1) streak++;
+    else break;
+  }
+  setTxt('prof-statStreak', streak);
+
+  if(history.length){
+    const freq={};
+    history.forEach(h=>{ freq[h.typeId]=(freq[h.typeId]||0)+1; });
+    const favId=Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0];
+    const favType=TYPE_DB.find(t=>t.id===favId);
+    if(favType) setTxt('prof-statFavType', favType.name.zh.split(' ')[0]);
+  }
+
+  /* 历史时间线（最近7条） */
+  const histList=document.getElementById('prof-historyList');
+  histList.innerHTML='';
+  history.slice(0,7).forEach(h=>{
+    const t=TYPE_DB.find(x=>x.id===h.typeId);
+    if(!t) return;
+    const div=document.createElement('div');
+    div.className='history-item';
+    div.innerHTML=`<span class="history-date">${escapeHTML(h.date.slice(5))}</span><span class="history-type-icon">${t.name.zh.split(' ')[0]}</span><div><div class="history-type-name">${escapeHTML(t.name.zh.split(' ').slice(1).join(' '))}</div><div class="history-type-en">${escapeHTML(t.name.en)}</div></div>`;
+    histList.appendChild(div);
+  });
+  if(!history.length) histList.innerHTML='<div style="color:#7a85a5;font-size:14px;padding:12px">No history yet. Complete your first test!</div>';
+
+  /* ---- 重播混音 ---- */
+  document.getElementById('prof-replayBtn').addEventListener('click',()=>{
+    if(todayData.sessionConfig){ generateFinalMix(todayData.sessionConfig); }
+    else { alert('Complete today\'s test first!'); }
+  });
+
+  /* ---- 返回按钮 ---- */
+  document.getElementById('prof-backBtn').addEventListener('click',  ()=>showView('TEST'));
+  document.getElementById('prof-navBack').addEventListener('click',  e=>{ e.preventDefault(); showView('TEST'); });
+
+  /* ---- 背景切换器 ---- */
+  const bgMap={
+    gradient: document.getElementById('prof-gradientBg'),
+    video1:   document.getElementById('prof-video1'),
+    video2:   document.getElementById('prof-video2'),
+    video3:   document.getElementById('prof-video3'),
+    gif1:     document.getElementById('prof-gif1'),
+    gif2:     document.getElementById('prof-gif2'),
+    gif3:     document.getElementById('prof-gif3'),
+  };
+  document.querySelectorAll('.bg-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const bgId=btn.dataset.bg;
+      Object.entries(bgMap).forEach(([k,el])=>{
+        if(!el) return;
+        if(k==='gradient') el.style.opacity=bgId==='gradient'?'1':'0.3';
+        else { el.classList.remove('active'); if(el.tagName==='VIDEO'){ el.pause(); el.currentTime=0; } }
+      });
+      if(bgId!=='gradient'&&bgMap[bgId]){ bgMap[bgId].classList.add('active'); if(bgMap[bgId].tagName==='VIDEO') bgMap[bgId].play(); }
+      document.querySelectorAll('.bg-btn').forEach(b=>b.classList.toggle('active',b===btn));
+    });
+  });
+
+  /* ---- 粒子生成 ---- */
+  const bgLayer=document.querySelector('#view-profile .profile-bg-layer');
+  if(bgLayer&&!bgLayer.querySelector('.particle')){
+    for(let i=0;i<18;i++){
+      const p=document.createElement('div');
+      p.className='particle';
+      p.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*15}s;animation-duration:${12+Math.random()*10}s`;
+      bgLayer.appendChild(p);
+    }
+  }
+
+  /* ---- Settings Overlay ---- */
+  const overlay   =document.getElementById('prof-settingsOverlay');
+  const settingsBtn=document.getElementById('prof-settingsBtn');
+  const closeBtn  =document.getElementById('prof-closeSettings');
+  const saveBtn   =document.getElementById('prof-saveBtn');
+  const toast     =document.getElementById('prof-toast');
+  const toastText =document.getElementById('prof-toastText');
+
+  settingsBtn.addEventListener('click',()=>overlay.classList.add('active'));
+  closeBtn.addEventListener('click',   ()=>overlay.classList.remove('active'));
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.classList.remove('active'); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') overlay.classList.remove('active'); });
+
+  /* 头像预设 */
+  const avatarIcons=['user-astronaut','cat','dog','ghost','dragon','robot','crown','moon','star','bolt'];
+  const presetsEl=document.getElementById('prof-avatarPresets');
+  presetsEl.innerHTML='';
+  avatarIcons.forEach(icon=>{
+    const div=document.createElement('div');
+    div.className='preset-item';
+    div.innerHTML=`<i class="fas fa-${icon}"></i>`;
+    div.addEventListener('click',()=>{
+      document.getElementById('prof-mainAvatarIcon').className=`fas fa-${icon}`;
+      document.getElementById('prof-settingsAvatarIcon').className=`fas fa-${icon}`;
+      const u=loadUser()||{}; u.avatar=icon; saveUser(u);
+    });
+    presetsEl.appendChild(div);
+  });
+
+  /* 保存设置 */
+  saveBtn.addEventListener('click',()=>{
+    const u=loadUser()||{};
+    u.nickname=escapeHTML(document.getElementById('prof-settingsName').value.trim())||u.nickname;
+    u.location=escapeHTML(document.getElementById('prof-settingsLocation').value.trim());
+    u.bio     =escapeHTML(document.getElementById('prof-settingsBio').value.trim());
+    saveUser(u);
+    setTxt('prof-displayName',     u.nickname);
+    setTxt('prof-displayUsername', u.nickname);
+    setTxt('prof-displayLocation', u.location);
+    setTxt('prof-displayStatus',   u.bio);
+    toastText.textContent='✓ Settings saved!';
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'),2500);
+    overlay.classList.remove('active');
+  });
+
+  /* Now Playing 控制 */
+  document.getElementById('prof-musicToggle').addEventListener('click',()=>{
+    if(todayData.sessionConfig){
+      generateFinalMix(todayData.sessionConfig);
+      setTxt('prof-nowPlayingText', todayData.type?todayData.type.name.en+' Mix':'Echo Mix');
+      document.getElementById('prof-musicIcon').className='fas fa-pause';
+    }
+  });
+
+  /* ---- 退出登录 / 清空历史 ---- */
+  document.getElementById('prof-logoutBtn').addEventListener('click',()=>{
+    try{ localStorage.removeItem('resonance_user'); }catch(e){}
+    currentUser=null; showView('LOGIN'); initLoginView();
+  });
+  document.getElementById('prof-clearHistoryBtn').addEventListener('click',()=>{
+    saveHistory([]); initProfileView();
+  });
+}
+function initLoginView(){
+  if(loginViewDisposer) loginViewDisposer();
+  const chars=['lc-char1','lc-char2','lc-char3'].map(id=>document.getElementById(id));
+  const pupils=[{L:document.getElementById('lc-p1L'),R:document.getElementById('lc-p1R')},{L:document.getElementById('lc-p2L'),R:document.getElementById('lc-p2R')},{L:document.getElementById('lc-p3L'),R:document.getElementById('lc-p3R')}];
+  const pwdEl=document.getElementById('lc-password'),confirmEl=document.getElementById('lc-confirm'),toggleEl=document.getElementById('lc-togglePwd'),eyeIcon=document.getElementById('lc-eyeIcon'),beginBtn=document.getElementById('lc-beginBtn'),nickEl=document.getElementById('lc-nickname'),errEl=document.getElementById('lc-error'),titleEl=document.getElementById('lc-title'),subtitleEl=document.getElementById('lc-subtitle'),confirmGroup=document.getElementById('lc-confirmGroup'),loginOptions=document.getElementById('lc-loginOptions');
+  let isSignup=false;
+  const target=[{x:0,y:0},{x:0,y:0},{x:0,y:0}],cur=[{x:0,y:0},{x:0,y:0},{x:0,y:0}];
+  let lcRafId;
+  function lcRaf(){ chars.forEach((c,i)=>{ cur[i].x+=(target[i].x-cur[i].x)*0.15; cur[i].y+=(target[i].y-cur[i].y)*0.15; if(c.classList.contains('avoiding')) return; const ex=c.classList.contains('peeking')?3.5:0, ey=c.classList.contains('peeking')?-1.5:0; pupils[i].L.style.transform=`translate(${cur[i].x+ex}px,${cur[i].y+ey}px)`; pupils[i].R.style.transform=`translate(${cur[i].x+ex}px,${cur[i].y+ey}px)`; }); lcRafId=requestAnimationFrame(lcRaf);}
+  lcRafId=requestAnimationFrame(lcRaf);
+  const mmHandler=e=>{ chars.forEach((c,i)=>{ const head=c.querySelector('.char-head'),rect=head.getBoundingClientRect(),dx=e.clientX-(rect.left+rect.width/2),dy=e.clientY-(rect.top+rect.height/2),dist=Math.sqrt(dx*dx+dy*dy); if(dist>5){ const a=Math.atan2(dy,dx); target[i].x=Math.cos(a)*5; target[i].y=Math.sin(a)*5; } else { target[i].x=dx; target[i].y=dy; } }); };
+  document.addEventListener('mousemove',mmHandler);
+  function dispose(){ cancelAnimationFrame(lcRafId); document.removeEventListener('mousemove',mmHandler); loginViewDisposer=null; }
+  loginViewDisposer=dispose;
+  function syncPose(){ const vis=pwdEl.type==='text'; chars.forEach(c=>{ c.classList.toggle('peeking',!vis); c.classList.toggle('avoiding',vis); }); eyeIcon.className=vis?'far fa-eye':'far fa-eye-slash'; }
+  toggleEl.onclick=e=>{ e.preventDefault(); pwdEl.type=pwdEl.type==='password'?'text':'password'; syncPose(); };
+  syncPose();
+  function showErr(msg){ errEl.textContent=msg; errEl.style.display='block'; }
+  function hideErr(){ errEl.style.display='none'; }
+  function setMode(signup){
+    isSignup=signup; hideErr();
+    if(signup){
+      titleEl.textContent='Create Account'; subtitleEl.textContent='Start your echo journey';
+      confirmGroup.style.display=''; loginOptions.style.display='none'; beginBtn.textContent='Create Echo';
+      document.getElementById('lc-switchArea').innerHTML='Already have an account? <span style="color:#cfc3ff;cursor:pointer;font-weight:500" id="lc-switchBack">Sign in</span>';
+      document.getElementById('lc-switchBack').onclick=e=>{e.preventDefault();setMode(false);};
+    } else {
+      titleEl.textContent='Sign in'; subtitleEl.textContent='Access your echo identity';
+      confirmGroup.style.display='none'; loginOptions.style.display=''; beginBtn.textContent='Begin';
+      document.getElementById('lc-switchArea').innerHTML='New to Resonance? <a href="#" class="signup-link" id="lc-signupLink">Create an echo</a>';
+      document.getElementById('lc-signupLink').onclick=e=>{e.preventDefault();setMode(true);};
+    }
+  }
+  document.getElementById('lc-signupLink').onclick=e=>{e.preventDefault();setMode(true);};
+  function enterTest(user){ currentUser=user; dispose(); checkDailyReset(); showView('TEST'); const todayData=loadTodayData(); if(todayData&&todayData.completed){ Object.assign(sessionConfig,todayData.sessionConfig||{}); renderResultPage(todayData.type,todayData.sessionConfig); } else { document.getElementById('result-card').style.display='none'; document.getElementById('test-card').style.display='block'; startStep(0); } }
+  async function doSignIn(){
+    const name=nickEl.value.trim(), pwd=pwdEl.value;
+    if(!name){ showErr('Please enter your nickname.'); return; }
+    if(!pwd){ showErr('Please enter your password.'); return; }
+    const accounts=loadAccounts();
+    const acc=accounts[name.toLowerCase()];
+    if(!acc){ showErr('Account not found. Please sign up first.'); return; }
+    const hash=await hashPwd(pwd);
+    if(hash!==acc.pwdHash){ showErr('Incorrect password.'); return; }
+    saveUser(acc);
+    enterTest(acc);
+  }
+  async function doSignUp(){
+    const name=nickEl.value.trim(), pwd=pwdEl.value, conf=confirmEl.value;
+    if(!name){ showErr('Please enter a nickname.'); return; }
+    if(name.length<2){ showErr('Nickname must be at least 2 characters.'); return; }
+    if(!pwd){ showErr('Please enter a password.'); return; }
+    if(pwd.length<4){ showErr('Password must be at least 4 characters.'); return; }
+    if(pwd!==conf){ showErr('Passwords do not match.'); return; }
+    const accounts=loadAccounts();
+    if(accounts[name.toLowerCase()]){ showErr('Nickname already taken. Please choose another.'); return; }
+    const hash=await hashPwd(pwd);
+    const uid='UID_'+(window.crypto?.randomUUID?.().replace(/-/g,'').slice(0,8).toUpperCase()||Math.random().toString(36).slice(2,10).toUpperCase());
+    const newUser={uid,nickname:escapeHTML(name),avatar:'user-astronaut',joinedAt:new Date().toISOString(),pwdHash:hash};
+    accounts[name.toLowerCase()]=newUser;
+    saveAccounts(accounts);
+    saveUser(newUser);
+    enterTest(newUser);
+  }
+  beginBtn.onclick=()=>{ if(isSignup) doSignUp(); else doSignIn(); };
+  nickEl.onkeydown=e=>{ if(e.key==='Enter') pwdEl.focus(); };
+  pwdEl.onkeydown=e=>{ if(e.key==='Enter'){ if(isSignup) confirmEl.focus(); else doSignIn(); } };
+  confirmEl.onkeydown=e=>{ if(e.key==='Enter') doSignUp(); };
+}
+function init(){ checkDailyReset(); initTestView(); currentUser=loadUser(); if(!currentUser){ showView('LOGIN'); initLoginView(); } else { const todayData=loadTodayData(); showView('TEST'); if(todayData&&todayData.completed){ Object.assign(sessionConfig,todayData.sessionConfig||{}); renderResultPage(todayData.type,todayData.sessionConfig); } else { document.getElementById('result-card').style.display='none'; document.getElementById('test-card').style.display='block'; startStep(0); } } }
+document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
