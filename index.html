@@ -1,0 +1,3219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Resonance — EchoPlay</title>
+  <style>
+    /* ── Reset ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #07090f;
+      --surface: #0d1524;
+      --border: #1a2540;
+      --glow-c: #4af3ff;
+      --glow-p: #8b5cf6;
+      --text: #dde8ff;
+      --text-dim: #5a6a8a;
+      --accent: #4af3ff;
+      --radius: 16px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── Platform homepage ───────────────────────────────────────── */
+    .platform-home {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+      text-align: center;
+    }
+    .platform-home.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .home-logo {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      background: linear-gradient(135deg, var(--glow-c), var(--glow-p));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    .home-tagline {
+      color: var(--text-dim);
+      font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 3rem;
+    }
+    .home-fingerprint-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 2.5rem;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 0 40px rgba(74,243,255,0.07);
+    }
+    .home-fingerprint-card h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      margin-bottom: 1.5rem;
+    }
+    .home-fp-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+    }
+    .home-fp-label { color: var(--text-dim); }
+    .home-fp-value {
+      color: var(--accent);
+      font-weight: 600;
+      text-align: right;
+      max-width: 60%;
+    }
+    .home-nav {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 3rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .nav-item {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-item:hover { color: var(--accent); }
+
+    /* ── Modal overlay ───────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      background: rgba(4,6,10,0.96);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      transition: opacity 0.7s ease;
+    }
+    .modal-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 520px;
+      padding: 2.5rem 2rem;
+      position: relative;
+      box-shadow: 0 0 80px rgba(74,243,255,0.1), 0 0 160px rgba(139,92,246,0.06);
+      overflow: hidden;
+    }
+
+    /* glowing corner accents */
+    .modal-box::before, .modal-box::after {
+      content: '';
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .modal-box::before {
+      top: -40px; left: -40px;
+      background: radial-gradient(circle, rgba(74,243,255,0.15) 0%, transparent 70%);
+    }
+    .modal-box::after {
+      bottom: -40px; right: -40px;
+      background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+    }
+
+    /* ── Screen helpers ─────────────────────────────────────────── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Intro screen ───────────────────────────────────────────── */
+    .intro-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+    .intro-title {
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--glow-c) 0%, var(--glow-p) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1.2rem;
+      line-height: 1.2;
+    }
+    .intro-desc {
+      color: var(--text-dim);
+      font-size: 0.92rem;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+    }
+    .intro-steps {
+      list-style: none;
+      margin-bottom: 2.5rem;
+    }
+    .intro-steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 0.9rem;
+    }
+    .step-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
+
+    /* ── Game screen ────────────────────────────────────────────── */
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+    .game-title {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .timer-ring {
+      position: relative;
+      width: 48px;
+      height: 48px;
+    }
+    .timer-svg { transform: rotate(-90deg); }
+    .timer-track { stroke: var(--border); }
+    .timer-progress {
+      stroke: var(--accent);
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s linear;
+      filter: drop-shadow(0 0 4px var(--accent));
+    }
+    .timer-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* 2-D interactive pad */
+    .pad-container {
+      position: relative;
+      margin: 0 auto 1.25rem;
+    }
+    .pad-axis-label {
+      position: absolute;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      user-select: none;
+    }
+    .label-pitch-high { top: 0; left: 50%; transform: translate(-50%, -150%); }
+    .label-pitch-low  { bottom: 0; left: 50%; transform: translate(-50%, 150%); }
+    .label-rhythm-sparse { left: 0; top: 50%; transform: translate(-115%, -50%); }
+    .label-rhythm-dense  { right: 0; top: 50%; transform: translate(115%, -50%); }
+
+    #echo-pad {
+      display: block;
+      width: 100%;
+      border-radius: 16px;
+      cursor: crosshair;
+      touch-action: none;
+      background: transparent;
+    }
+
+    .game-controls {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ── Result screen ──────────────────────────────────────────── */
+    .result-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+    .result-fp-label {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--glow-c), var(--glow-p));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+    }
+    .result-sentence {
+      color: var(--text-dim);
+      font-size: 0.88rem;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .result-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 380px) { .result-cards { grid-template-columns: 1fr; } }
+    .result-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .result-card-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.4rem;
+    }
+    .result-card-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .result-card-value.accent { color: var(--accent); }
+    .result-card-value.purple { color: #a78bfa; }
+
+    .result-waveform {
+      margin: 0 auto 1.5rem;
+      display: block;
+    }
+    .result-playing-note {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .result-playing-note span { color: var(--accent); }
+
+    /* ── Shared button ──────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 2rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--glow-c), #0a8aff);
+      color: #070b15;
+      box-shadow: 0 0 20px rgba(74,243,255,0.3);
+    }
+    .btn-primary:hover { box-shadow: 0 0 30px rgba(74,243,255,0.5); }
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      box-shadow: 0 0 12px rgba(74,243,255,0.1);
+    }
+    .btn-outline:hover { box-shadow: 0 0 20px rgba(74,243,255,0.25); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text-dim); }
+    .btn-sm { padding: 0.55rem 1.4rem; font-size: 0.78rem; }
+
+    /* ── Pulse animation for cursor dot ───────────────────────── */
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* ── Breathing animation for intro glyph ─────────────────── */
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.06); opacity: 1; }
+    }
+    .glyph {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.5rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(74,243,255,0.2) 0%, rgba(139,92,246,0.12) 60%, transparent 80%);
+      border: 1px solid rgba(74,243,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: breathe 3s ease-in-out infinite;
+    }
+    .glyph svg { width: 28px; height: 28px; }
+
+    /* ── Community Panel ────────────────────────────────────────── */
+    .community-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 850;
+      background: var(--bg);
+      overflow-y: auto;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      padding: 2rem 1.5rem 4rem;
+    }
+    .community-panel.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .community-inner {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .community-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.75rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .community-title {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--glow-c), var(--glow-p));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+    .community-subtitle {
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      margin-top: 0.3rem;
+      letter-spacing: 0.05em;
+    }
+    .community-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 0.4rem 1.2rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(74,243,255,0.06);
+    }
+    .community-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .echo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      position: relative;
+    }
+    .echo-card:hover {
+      border-color: rgba(74,243,255,0.25);
+      box-shadow: 0 0 20px rgba(74,243,255,0.06);
+    }
+    .echo-card.playing {
+      border-color: var(--accent);
+      box-shadow: 0 0 24px rgba(74,243,255,0.18);
+    }
+    .echo-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.6rem;
+    }
+    .echo-card-username {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .echo-card-date {
+      font-size: 0.62rem;
+      color: var(--text-dim);
+    }
+    .echo-card-fp {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+    .echo-card-community {
+      font-size: 0.72rem;
+      color: #a78bfa;
+      margin-bottom: 0.8rem;
+    }
+    .echo-card-stats {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.9rem;
+    }
+    .echo-stat-chip {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.18rem 0.6rem;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+    .btn-preview {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-dim);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      padding: 0.45rem 0;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      font-family: inherit;
+    }
+    .btn-preview:hover, .echo-card.playing .btn-preview {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .echo-card.playing .btn-preview {
+      background: rgba(74,243,255,0.07);
+    }
+    .echo-card-badge {
+      position: absolute;
+      top: 0.8rem;
+      right: 0.8rem;
+      background: linear-gradient(135deg, var(--glow-c), var(--glow-p));
+      color: #070b15;
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+    }
+    .community-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--text-dim);
+      padding: 3rem 1rem;
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+
+    /* ── Auth Panel ─────────────────────────────────────────────── */
+    .auth-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(4,6,10,0.97);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .auth-panel.visible { opacity: 1; pointer-events: auto; }
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 420px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 0 80px rgba(74,243,255,0.1), 0 0 160px rgba(139,92,246,0.06);
+    }
+    .auth-logo {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      background: linear-gradient(135deg, var(--glow-c), var(--glow-p));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.3rem;
+    }
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.75rem;
+    }
+    .auth-tab {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.75rem 0;
+      cursor: pointer;
+      font-family: inherit;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .auth-form { display: flex; flex-direction: column; gap: 1rem; }
+    .auth-form.hidden { display: none; }
+    .auth-field { display: flex; flex-direction: column; gap: 0.35rem; }
+    .auth-label { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); }
+    .auth-input {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.9rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .auth-input:focus { border-color: var(--accent); }
+    .auth-error {
+      font-size: 0.75rem;
+      color: #f87171;
+      min-height: 1.1em;
+      text-align: center;
+    }
+    .auth-switch {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-top: 0.5rem;
+    }
+    .auth-switch button {
+      background: none; border: none; color: var(--accent);
+      cursor: pointer; font-size: inherit; font-family: inherit;
+      text-decoration: underline;
+    }
+    .auth-close-btn {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: none; border: none; color: var(--text-dim);
+      font-size: 1.2rem; cursor: pointer; line-height: 1;
+    }
+
+    /* ── Nav auth area ──────────────────────────────────────────── */
+    .nav-auth-area {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .nav-user-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(74,243,255,0.08);
+      border: 1px solid rgba(74,243,255,0.2);
+      border-radius: 999px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Forum Panel ────────────────────────────────────────────── */
+    .forum-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 840;
+      background: var(--bg);
+      overflow-y: auto;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+      padding: 2rem 1.5rem 4rem;
+    }
+    .forum-panel.visible { opacity: 1; pointer-events: auto; }
+    .forum-inner { max-width: 900px; margin: 0 auto; }
+    .forum-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .forum-title {
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #fbbf24, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .forum-subtitle { color: var(--text-dim); font-size: 0.8rem; margin-top: 0.25rem; }
+    .forum-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .btn-new-post {
+      background: linear-gradient(135deg, #fbbf24, #f472b6);
+      color: #070b15;
+      border: none;
+      border-radius: 999px;
+      padding: 0.5rem 1.2rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s;
+    }
+    .btn-new-post:hover { opacity: 0.88; }
+    .forum-feed { display: flex; flex-direction: column; gap: 1.25rem; }
+    .forum-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .forum-tab-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 0.4rem 1.2rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .forum-tab-btn.active, .forum-tab-btn:hover {
+      border-color: #fbbf24;
+      color: #fbbf24;
+      background: rgba(251,191,36,0.06);
+    }
+    .post-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      transition: border-color 0.25s;
+    }
+    .post-card:hover { border-color: rgba(251,191,36,0.22); }
+    .post-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.7rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .post-author {
+      display: flex;
+      flex-direction: column;
+      gap: 0.12rem;
+    }
+    .post-author-name { font-size: 0.8rem; font-weight: 600; color: #fbbf24; }
+    .post-author-fp { font-size: 0.65rem; color: var(--text-dim); }
+    .post-date { font-size: 0.62rem; color: var(--text-dim); }
+    .post-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 0.35rem; }
+    .post-desc { font-size: 0.83rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 1rem; }
+    .post-audio-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.65rem 1rem;
+      margin-bottom: 0.9rem;
+    }
+    .post-play-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fbbf24, #f472b6);
+      border: none;
+      color: #070b15;
+      font-size: 0.8rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+    }
+    .post-play-btn:hover { opacity: 0.85; }
+    .post-waveform { flex: 1; }
+    .post-waveform canvas { width: 100%; height: 32px; display: block; }
+    .post-fp-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .post-fp-chip {
+      background: rgba(251,191,36,0.07);
+      border: 1px solid rgba(251,191,36,0.2);
+      border-radius: 999px;
+      padding: 0.15rem 0.55rem;
+      font-size: 0.62rem;
+      color: #fbbf24;
+      letter-spacing: 0.04em;
+    }
+    .post-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.85rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .post-actions { display: flex; gap: 0.6rem; }
+    .post-action-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-dim);
+      font-size: 0.72rem;
+      padding: 0.3rem 0.85rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .post-action-btn:hover, .post-action-btn.liked { border-color: #f472b6; color: #f472b6; }
+    .post-comments-section {
+      margin-top: 1rem;
+      border-top: 1px solid var(--border);
+      padding-top: 0.9rem;
+      display: none;
+    }
+    .post-comments-section.open { display: block; }
+    .comment-list { display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 0.9rem; }
+    .comment-item {
+      background: rgba(255,255,255,0.025);
+      border-radius: 10px;
+      padding: 0.6rem 0.85rem;
+    }
+    .comment-author { font-size: 0.65rem; color: #fbbf24; font-weight: 600; margin-bottom: 0.2rem; }
+    .comment-text { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; }
+    .comment-input-row { display: flex; gap: 0.5rem; }
+    .comment-input {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.5rem 0.8rem;
+      color: var(--text);
+      font-size: 0.82rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .comment-input:focus { border-color: #fbbf24; }
+    .btn-send-comment {
+      background: linear-gradient(135deg, #fbbf24, #f472b6);
+      border: none;
+      border-radius: 999px;
+      color: #070b15;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    /* ── New Post Modal ─────────────────────────────────────────── */
+    .new-post-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1050;
+      background: rgba(4,6,10,0.96);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .new-post-overlay.visible { opacity: 1; pointer-events: auto; }
+    .new-post-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 480px;
+      padding: 2rem 1.75rem;
+      box-shadow: 0 0 60px rgba(251,191,36,0.08);
+      position: relative;
+    }
+    .new-post-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 1.25rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Visual FX extras ───────────────────────────────────────── */
+    @keyframes eq-bounce {
+      0%, 100% { transform: scaleY(0.3); }
+      50%       { transform: scaleY(1); }
+    }
+    .eq-bars-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 44px;
+      margin: 0.6rem 0;
+      padding: 0 0.25rem;
+    }
+    .eq-bar {
+      flex: 1;
+      border-radius: 2px 2px 0 0;
+      animation: eq-bounce var(--dur, 0.6s) ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+      transform-origin: bottom;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ Main platform homepage ═════════════════════════ -->
+<main id="platform-home" class="platform-home" aria-hidden="true">
+  <div class="home-logo">Resonance</div>
+  <div class="home-tagline">EchoPlay · Your Emotional Universe</div>
+
+  <div id="home-fp-card" class="home-fingerprint-card" style="display:none">
+    <h2>Your Emotional Fingerprint</h2>
+    <div class="home-fp-row">
+      <span class="home-fp-label">Identity</span>
+      <span class="home-fp-value" id="home-username"></span>
+    </div>
+    <div class="home-fp-row">
+      <span class="home-fp-label">Fingerprint</span>
+      <span class="home-fp-value" id="home-fp"></span>
+    </div>
+    <div class="home-fp-row">
+      <span class="home-fp-label">Community</span>
+      <span class="home-fp-value" id="home-community"></span>
+    </div>
+    <div class="home-fp-row" style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+      <span class="home-fp-label">Pitch</span>
+      <span class="home-fp-value" id="home-pitch"></span>
+    </div>
+    <div class="home-fp-row">
+      <span class="home-fp-label">Rhythm</span>
+      <span class="home-fp-value" id="home-rhythm"></span>
+    </div>
+  </div>
+
+  <nav class="home-nav">
+    <a href="#" class="nav-item" id="nav-explore">Explore</a>
+    <a href="#" class="nav-item" id="nav-communities">Communities</a>
+    <a href="#" class="nav-item" id="nav-forum">Forum</a>
+    <a href="#" class="nav-item" id="nav-myecho">My Echo</a>
+    <a href="#" class="nav-item">About</a>
+  </nav>
+  <div class="nav-auth-area" id="nav-auth-area">
+    <!-- filled by JS -->
+  </div>
+</main>
+
+<!-- ═══════════ Game Modal ══════════════════════════════════════ -->
+<div id="modal-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Your First Echo mini-game">
+  <div class="modal-box">
+
+    <!-- ── Intro Screen ─────────────────────────────────────── -->
+    <div id="screen-intro" class="screen active">
+      <div class="glyph">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2C14 2 6 8 6 16a8 8 0 0016 0C22 8 14 2 14 2z" stroke="#4af3ff" stroke-width="1.5" stroke-linejoin="round"/>
+          <circle cx="14" cy="16" r="3" stroke="#8b5cf6" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <p class="intro-eyebrow">Resonance · EchoPlay</p>
+      <h1 class="intro-title">Your First Echo</h1>
+      <p class="intro-desc">
+        In the next few seconds you will shape your very first sound. It becomes
+        your <em>emotional fingerprint</em> — a unique key to the Resonance universe.
+      </p>
+      <ul class="intro-steps">
+        <li>
+          <span class="step-icon">↕</span>
+          <span>Slide <strong>up&nbsp;/&nbsp;down</strong> to change pitch — from deep &amp; calm to bright &amp; alive.</span>
+        </li>
+        <li>
+          <span class="step-icon">↔</span>
+          <span>Slide <strong>left&nbsp;/&nbsp;right</strong> to change rhythm — from sparse &amp; slow to dense &amp; fast.</span>
+        </li>
+        <li>
+          <span class="step-icon">◎</span>
+          <span>Your sound evolves in real-time. After 10 seconds your echo is captured.</span>
+        </li>
+      </ul>
+      <div style="display:flex;justify-content:center;">
+        <button class="btn btn-primary" id="btn-begin">Begin ›</button>
+      </div>
+    </div>
+
+    <!-- ── Game Screen ──────────────────────────────────────── -->
+    <div id="screen-game" class="screen">
+      <div class="game-header">
+        <span class="game-title">Shape Your Echo</span>
+        <div class="timer-ring">
+          <svg class="timer-svg" width="48" height="48" viewBox="0 0 48 48">
+            <circle class="timer-track" cx="24" cy="24" r="20" fill="none" stroke-width="3"/>
+            <circle id="timer-arc" class="timer-progress" cx="24" cy="24" r="20" fill="none"
+              stroke-width="3" stroke-dasharray="125.66" stroke-dashoffset="0"/>
+          </svg>
+          <div class="timer-text" id="timer-text">10</div>
+        </div>
+      </div>
+
+      <!-- Axis labels + pad -->
+      <div class="pad-container" style="padding: 22px 30px;">
+        <span class="pad-axis-label label-pitch-high">Bright / Excited</span>
+        <span class="pad-axis-label label-pitch-low">Deep / Calm</span>
+        <span class="pad-axis-label label-rhythm-sparse">Sparse</span>
+        <span class="pad-axis-label label-rhythm-dense">Dense</span>
+        <canvas id="echo-pad" width="460" height="260"></canvas>
+      </div>
+
+      <div class="game-controls">
+        <button class="btn btn-outline btn-sm" id="btn-finish">Finish &amp; Capture</button>
+      </div>
+    </div>
+
+    <!-- ── Result Screen ────────────────────────────────────── -->
+    <div id="screen-result" class="screen">
+      <p class="result-eyebrow">Emotional Fingerprint</p>
+      <div class="result-fp-label" id="result-fp-label">—</div>
+      <p class="result-sentence" id="result-sentence"></p>
+
+      <canvas id="result-wave" class="result-waveform" width="440" height="70"></canvas>
+      <p class="result-playing-note" id="result-note-info">Playing your echo&hellip;</p>
+
+      <div class="result-cards">
+        <div class="result-card">
+          <div class="result-card-label">Your ID</div>
+          <div class="result-card-value accent" id="result-username">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label">Community Match</div>
+          <div class="result-card-value purple" id="result-community">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label">Pitch</div>
+          <div class="result-card-value" id="result-pitch">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-label">Rhythm</div>
+          <div class="result-card-value" id="result-rhythm">—</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" id="btn-enter">Enter Resonance ›</button>
+        <button class="btn btn-outline btn-sm" id="btn-share">&#8853; Share Echo</button>
+        <button class="btn btn-ghost btn-sm" id="btn-publish-forum" style="background:linear-gradient(135deg,#fbbf24,#f472b6);color:#070b15;border:none;">&#9834; Publish to Forum</button>
+        <button class="btn btn-ghost btn-sm" id="btn-replay">Try Again</button>
+      </div>
+    </div>
+
+  </div><!-- /modal-box -->
+</div><!-- /modal-overlay -->
+
+<!-- ═══════════ Community Panel ════════════════════════════════ -->
+<div id="community-panel" class="community-panel" aria-hidden="true">
+  <div class="community-inner">
+    <div class="community-header">
+      <div>
+        <h2 class="community-title">Echo Community</h2>
+        <p class="community-subtitle">Discover emotional fingerprints from across the Resonance universe</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btn-close-community">&#x2715; Close</button>
+    </div>
+    <div class="community-tabs">
+      <button class="tab-btn active" data-tab="all">All Echoes</button>
+      <button class="tab-btn" data-tab="mine">My Community</button>
+    </div>
+    <div id="community-grid" class="community-grid"></div>
+  </div>
+</div>
+
+<!-- ═══════════ Forum Panel ═════════════════════════════════════ -->
+<div id="forum-panel" class="forum-panel" aria-hidden="true">
+  <div class="forum-inner">
+    <div class="forum-header">
+      <div>
+        <h2 class="forum-title">Sound Feed</h2>
+        <p class="forum-subtitle">Music posts &amp; emotional echoes from the community</p>
+      </div>
+      <div class="forum-actions">
+        <button class="btn-new-post" id="btn-open-new-post">&#9834; New Post</button>
+        <button class="btn btn-ghost btn-sm" id="btn-close-forum">&#x2715; Close</button>
+      </div>
+    </div>
+    <div class="forum-tabs">
+      <button class="forum-tab-btn active" data-forum-tab="all">All</button>
+      <button class="forum-tab-btn" data-forum-tab="myvibe">My Vibe</button>
+    </div>
+    <div id="forum-feed" class="forum-feed"></div>
+  </div>
+</div>
+
+<!-- ═══════════ New Post Overlay ════════════════════════════════ -->
+<div id="new-post-overlay" class="new-post-overlay" aria-hidden="true">
+  <div class="new-post-box">
+    <div class="new-post-title">&#9834; Share Your Sound</div>
+    <button class="auth-close-btn" id="btn-close-new-post">&#x2715;</button>
+    <div class="auth-form" id="new-post-form">
+      <div class="auth-field">
+        <label class="auth-label" for="np-title">Post Title</label>
+        <input class="auth-input" id="np-title" placeholder="Give your echo a name…" maxlength="60" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="np-desc">Description</label>
+        <textarea class="auth-input" id="np-desc" rows="3" placeholder="Describe what you felt…" maxlength="240" style="resize:vertical"></textarea>
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="np-mood">Mood Tag</label>
+        <select class="auth-input" id="np-mood">
+          <option value="">— select mood —</option>
+          <option value="Radiant Storm">Radiant Storm</option>
+          <option value="Silent Root">Silent Root</option>
+          <option value="Flowing Current">Flowing Current</option>
+          <option value="Crystal Horizon">Crystal Horizon</option>
+          <option value="Deep Tide">Deep Tide</option>
+          <option value="Still Waters">Still Waters</option>
+        </select>
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="np-genre">Music Genre</label>
+        <select class="auth-input" id="np-genre">
+          <option value="">— select genre —</option>
+          <option value="Ambient">Ambient</option>
+          <option value="Electronic">Electronic</option>
+          <option value="Chillwave">Chillwave</option>
+          <option value="Drum & Bass">Drum &amp; Bass</option>
+          <option value="Lo-Fi">Lo-Fi</option>
+          <option value="Experimental">Experimental</option>
+          <option value="Synthwave">Synthwave</option>
+          <option value="Classical">Classical</option>
+        </select>
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="np-audio">Audio File <span style="color:var(--text-dim)">(optional)</span></label>
+        <input class="auth-input" id="np-audio" type="file" accept="audio/*" style="padding:0.4rem;cursor:pointer" />
+      </div>
+      <p style="font-size:0.72rem;color:var(--text-dim);line-height:1.6">
+        Your current echo (<span id="np-fp-preview" style="color:var(--accent)">—</span>) will be attached as the audio fingerprint.
+      </p>
+      <div class="auth-error" id="new-post-error"></div>
+      <button class="btn-new-post" id="btn-submit-post" style="width:100%;padding:0.65rem">Publish Post ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ Auth Panel ═══════════════════════════════════════ -->
+<div id="auth-panel" class="auth-panel" aria-hidden="true">
+  <div class="auth-box" style="position:relative">
+    <button class="auth-close-btn" id="btn-close-auth">&#x2715;</button>
+    <div class="auth-logo">Resonance · EchoPlay</div>
+    <p style="text-align:center;color:var(--text-dim);font-size:0.72rem;margin-bottom:1.25rem;letter-spacing:0.06em">Join the community</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-auth-tab="login" id="auth-tab-login">Login</button>
+      <button class="auth-tab" data-auth-tab="signup" id="auth-tab-signup">Sign Up</button>
+    </div>
+    <!-- Login form -->
+    <form class="auth-form" id="auth-login-form" onsubmit="return false">
+      <div class="auth-field">
+        <label class="auth-label" for="login-username">Username</label>
+        <input class="auth-input" id="login-username" type="text" autocomplete="username" placeholder="YourUsername" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="login-password">Password</label>
+        <input class="auth-input" id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <div class="auth-error" id="login-error"></div>
+      <button class="btn btn-primary" style="width:100%" id="btn-do-login">Login ›</button>
+    </form>
+    <!-- Sign up form -->
+    <form class="auth-form hidden" id="auth-signup-form" onsubmit="return false">
+      <div class="auth-field">
+        <label class="auth-label" for="su-username">Username</label>
+        <input class="auth-input" id="su-username" type="text" autocomplete="username" placeholder="Choose a username" maxlength="24" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="su-email">Email</label>
+        <input class="auth-input" id="su-email" type="email" autocomplete="email" placeholder="you@example.com" />
+      </div>
+      <div class="auth-field">
+        <label class="auth-label" for="su-password">Password</label>
+        <input class="auth-input" id="su-password" type="password" autocomplete="new-password" placeholder="Min 6 characters" />
+      </div>
+      <div class="auth-error" id="signup-error"></div>
+      <button class="btn btn-primary" style="width:100%" id="btn-do-signup">Create Account ›</button>
+    </form>
+    <p class="auth-switch">
+      <span id="auth-switch-text">Don't have an account?</span>
+      <button id="auth-switch-btn"> Sign up</button>
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════ Profile Panel ══════════════════════════════════ -->
+<div id="profile-panel" class="auth-panel" aria-hidden="true" style="z-index:860">
+  <div class="auth-box" style="position:relative;max-width:520px;width:95vw;padding:1.75rem">
+    <button class="auth-close-btn" id="btn-close-profile">&#x2715;</button>
+    <div class="auth-logo" id="profile-displayname" style="font-size:1.2rem;margin-bottom:0.25rem">—</div>
+    <div style="color:var(--text-dim);font-size:0.75rem;margin-bottom:1rem" id="profile-username-sub"></div>
+    <div id="profile-bio" style="color:var(--text-dim);font-size:0.82rem;margin-bottom:1rem;line-height:1.6"></div>
+    <div style="display:flex;gap:1.5rem;margin-bottom:1.25rem;flex-wrap:wrap">
+      <div style="text-align:center">
+        <div style="font-size:1.25rem;font-weight:700;color:var(--accent)" id="profile-posts">—</div>
+        <div style="font-size:0.68rem;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase">Posts</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:1.25rem;font-weight:700;color:var(--glow-p)" id="profile-followers">—</div>
+        <div style="font-size:0.68rem;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase">Followers</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:1.25rem;font-weight:700;color:var(--text)" id="profile-following">—</div>
+        <div style="font-size:0.68rem;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase">Following</div>
+      </div>
+    </div>
+    <div id="profile-follow-row" style="margin-bottom:1rem;display:none">
+      <button id="btn-profile-follow" class="btn btn-outline btn-sm" style="font-size:0.78rem">Follow</button>
+    </div>
+    <div id="profile-badges" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem"></div>
+    <div style="font-size:0.78rem;color:var(--text-dim);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.6rem">Recent Posts</div>
+    <div id="profile-posts-list" style="display:flex;flex-direction:column;gap:0.6rem;max-height:40vh;overflow-y:auto"></div>
+    <div id="profile-error" style="color:#f87171;font-size:0.78rem;margin-top:0.5rem"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   YOUR FIRST ECHO — Emotional Fingerprint Mini-Game
+   Resonance · EchoPlay
+   ═══════════════════════════════════════════════════════════════ */
+
+'use strict';
+
+/* ── API Configuration ──────────────────────────────────────────── */
+// Change API_BASE to match your deployed backend URL
+const API_BASE = 'http://localhost:3001/api';
+
+function getToken() {
+  return localStorage.getItem('resonance_token') || null;
+}
+function setTokens(access, refresh) {
+  if (access) localStorage.setItem('resonance_token', access);
+  if (refresh) localStorage.setItem('resonance_refresh_token', refresh);
+}
+function clearTokens() {
+  localStorage.removeItem('resonance_token');
+  localStorage.removeItem('resonance_refresh_token');
+  localStorage.removeItem('resonance_user');
+}
+
+/**
+ * Authenticated fetch wrapper.
+ * Automatically adds Authorization header when a token exists.
+ * Sends JSON body unless options.body is FormData.
+ */
+async function apiFetch(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  const token = getToken();
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (options.body && !(options.body instanceof FormData) && typeof options.body === 'object') {
+    headers['Content-Type'] = 'application/json';
+    options = { ...options, body: JSON.stringify(options.body) };
+  }
+  return fetch(API_BASE + path, { ...options, headers });
+}
+
+/**
+ * Normalise a real API post into the shape used by renderForum().
+ * pitchNorm and rhythmNorm fall back to the stored fingerprint JSON,
+ * which the frontend saves when creating a post.
+ */
+function normalizePost(apiPost) {
+  const fp = apiPost.fingerprint || {};
+  const pitchNorm  = typeof fp.pitchNorm  === 'number' ? fp.pitchNorm  : 0.5;
+  const rhythmNorm = typeof fp.rhythmNorm === 'number' ? fp.rhythmNorm : 0.5;
+  return {
+    id:          apiPost.id,
+    title:       apiPost.title || '(untitled)',
+    description: apiPost.content || '',
+    username:    apiPost.user?.username   || 'Unknown',
+    displayName: apiPost.user?.displayName || apiPost.user?.username || 'Unknown',
+    fingerprint: apiPost.moodTag || fp.label || 'Still Waters',
+    community:   fp.community   || apiPost.musicGenre || 'The Community',
+    pitchNorm,
+    rhythmNorm,
+    pitchLabel:   fp.pitchLabel   || normLabel(pitchNorm),
+    rhythmLabel:  fp.rhythmLabel  || normLabel(rhythmNorm),
+    createdAt:   apiPost.createdAt,
+    likes:       apiPost.likeCount   || 0,
+    commentCount:apiPost.commentCount|| 0,
+    comments:    [],     // comments loaded lazily on expand
+    audioUrl:    apiPost.audioUrl   || null,
+    gameTags:    apiPost.gameTags   || [],
+    moodTag:     apiPost.moodTag    || null,
+    musicGenre:  apiPost.musicGenre || null,
+    isApiPost:   true,   // flag: use API for interactions
+  };
+}
+
+function normLabel(v) {
+  if (v < 0.25) return 'Very Low';
+  if (v < 0.45) return 'Low';
+  if (v < 0.6)  return 'Mid';
+  if (v < 0.8)  return 'High';
+  return 'Very High';
+}
+
+/* ── DOM refs ─────────────────────────────────────────────────── */
+const modalOverlay  = document.getElementById('modal-overlay');
+const platformHome  = document.getElementById('platform-home');
+const screenIntro   = document.getElementById('screen-intro');
+const screenGame    = document.getElementById('screen-game');
+const screenResult  = document.getElementById('screen-result');
+const btnBegin      = document.getElementById('btn-begin');
+const btnFinish     = document.getElementById('btn-finish');
+const btnEnter      = document.getElementById('btn-enter');
+const btnReplay     = document.getElementById('btn-replay');
+const timerArc      = document.getElementById('timer-arc');
+const timerText     = document.getElementById('timer-text');
+const echoPad       = document.getElementById('echo-pad');
+const padCtx        = echoPad.getContext('2d');
+const resultWave    = document.getElementById('result-wave');
+const waveCtx       = resultWave.getContext('2d');
+
+/* ── Game state ───────────────────────────────────────────────── */
+const GAME_DURATION = 10; // seconds
+const CIRCUMFERENCE = 2 * Math.PI * 20; // r=20 for the SVG circle
+
+let state = {
+  pitchNorm:  0.5,   // 0=deep/sad  1=bright/excited  (inverted: top=1)
+  rhythmNorm: 0.5,   // 0=sparse    1=dense
+  active:     false,
+  timerSecs:  GAME_DURATION,
+  timerInterval: null,
+  autoFinishTimeout: null,
+  hasInteracted: false,
+};
+
+/* ── Audio engine ─────────────────────────────────────────────── */
+let audioCtx      = null;
+let osc           = null;   // main oscillator
+let oscGain       = null;   // oscillator output gain
+let lfoOsc        = null;   // LFO for rhythm pulse
+let lfoGain       = null;   // LFO depth
+let masterGain    = null;
+let reverbGain    = null;
+let convolver     = null;
+let analyser      = null;
+
+// Map pitch norm [0,1] to frequency [90, 880] Hz (low→deep, high→bright)
+function pitchToFreq(p) {
+  const lo = 90, hi = 880;
+  return lo * Math.pow(hi / lo, p);
+}
+
+// Map rhythm norm [0,1] to LFO rate [0.3, 10] Hz
+function rhythmToLFO(r) {
+  return 0.3 + r * 9.7;
+}
+
+function createImpulse(ctx, duration, decay) {
+  const sr     = ctx.sampleRate;
+  const length = sr * duration;
+  const buf    = ctx.createBuffer(2, length, sr);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+    }
+  }
+  return buf;
+}
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+  analyser  = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+
+  masterGain = audioCtx.createGain();
+  masterGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+  masterGain.connect(analyser);
+  analyser.connect(audioCtx.destination);
+
+  // Reverb
+  convolver = audioCtx.createConvolver();
+  convolver.buffer = createImpulse(audioCtx, 2.5, 3);
+  reverbGain = audioCtx.createGain();
+  reverbGain.gain.value = 0.35;
+  convolver.connect(reverbGain);
+  reverbGain.connect(masterGain);
+
+  // Main oscillator
+  osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = pitchToFreq(state.pitchNorm);
+
+  // Second harmonic for warmth
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'triangle';
+  osc2.frequency.value = pitchToFreq(state.pitchNorm) * 1.5;
+  const osc2Gain = audioCtx.createGain();
+  osc2Gain.gain.value = 0.18;
+
+  // LFO for rhythmic amplitude modulation
+  lfoOsc  = audioCtx.createOscillator();
+  lfoOsc.type = 'sine';
+  lfoOsc.frequency.value = rhythmToLFO(state.rhythmNorm);
+
+  lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 0.5;
+
+  oscGain = audioCtx.createGain();
+  oscGain.gain.value = 0.7;
+
+  // Envelope: LFO modulates oscGain bias
+  const bias = audioCtx.createConstantSource();
+  bias.offset.value = 0.5;
+  bias.start();
+
+  lfoOsc.connect(lfoGain);
+  lfoGain.connect(oscGain.gain);
+  bias.connect(oscGain.gain);
+
+  osc.connect(oscGain);
+  osc2.connect(osc2Gain);
+  osc2Gain.connect(oscGain);
+
+  oscGain.connect(masterGain);
+  oscGain.connect(convolver);
+
+  osc.start();
+  osc2.start();
+  lfoOsc.start();
+}
+
+function startAudio() {
+  if (!audioCtx) initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
+  masterGain.gain.linearRampToValueAtTime(0.55, audioCtx.currentTime + 0.4);
+}
+
+function stopAudio(fadeTime = 0.6) {
+  if (!masterGain) return;
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
+  masterGain.gain.linearRampToValueAtTime(0.0, audioCtx.currentTime + fadeTime);
+}
+
+function updateAudio() {
+  if (!osc || !lfoOsc) return;
+  const t   = audioCtx.currentTime;
+  const freq = pitchToFreq(state.pitchNorm);
+  osc.frequency.cancelScheduledValues(t);
+  osc.frequency.setValueAtTime(osc.frequency.value, t);
+  osc.frequency.linearRampToValueAtTime(freq, t + 0.05);
+
+  // Update LFO rate for rhythm
+  const lfoRate = rhythmToLFO(state.rhythmNorm);
+  lfoOsc.frequency.cancelScheduledValues(t);
+  lfoOsc.frequency.setValueAtTime(lfoOsc.frequency.value, t);
+  lfoOsc.frequency.linearRampToValueAtTime(lfoRate, t + 0.08);
+}
+
+/* ── Result audio fragment (6–10 sec generative melody) ───────── */
+let resultAudioTimeout = null;
+let resultNoteTimeouts = [];
+
+const SCALES = {
+  minorPentatonic: [0, 3, 5, 7, 10],
+  majorPentatonic: [0, 2, 4, 7, 9],
+  dorian:          [0, 2, 3, 5, 7, 9, 10],
+  lydian:          [0, 2, 4, 6, 7, 9, 11],
+  wholeTone:       [0, 2, 4, 6, 8, 10],
+};
+
+function midiToHz(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function playResultFragment(pitchNorm, rhythmNorm, onComplete) {
+  if (!audioCtx) initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  // Choose scale by fingerprint quadrant
+  let scaleName, baseOctave;
+  if (pitchNorm >= 0.66 && rhythmNorm >= 0.5)      { scaleName = 'wholeTone';       baseOctave = 5; }
+  else if (pitchNorm >= 0.66 && rhythmNorm < 0.5)  { scaleName = 'lydian';          baseOctave = 5; }
+  else if (pitchNorm >= 0.33 && rhythmNorm >= 0.5) { scaleName = 'dorian';          baseOctave = 4; }
+  else if (pitchNorm >= 0.33 && rhythmNorm < 0.5)  { scaleName = 'majorPentatonic'; baseOctave = 4; }
+  else if (pitchNorm < 0.33  && rhythmNorm >= 0.5) { scaleName = 'dorian';          baseOctave = 3; }
+  else                                              { scaleName = 'minorPentatonic'; baseOctave = 3; }
+
+  const scale     = SCALES[scaleName];
+  const baseMidi  = (baseOctave + 1) * 12; // C of that octave
+  const noteDur   = rhythmNorm < 0.2 ? 1.4 :
+                    rhythmNorm < 0.5 ? 0.9 :
+                    rhythmNorm < 0.75? 0.55 : 0.3;
+  const gap       = noteDur * (0.1 + (1 - rhythmNorm) * 0.5);
+  const totalDur  = 8;
+  const noteSlot  = noteDur + gap;
+  const numNotes  = Math.floor(totalDur / noteSlot);
+
+  // Clear master gain from interactive mode
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  masterGain.gain.setValueAtTime(0.55, audioCtx.currentTime);
+
+  let t = audioCtx.currentTime + 0.05;
+
+  for (let i = 0; i < numNotes; i++) {
+    const scaleDeg  = scale[i % scale.length];
+    const octShift  = Math.floor(i / scale.length) % 2;
+    const midi      = baseMidi + scaleDeg + octShift * 12;
+    const freq      = midiToHz(midi);
+    const noteStart = t + i * noteSlot;
+
+    const noteOsc  = audioCtx.createOscillator();
+    noteOsc.type   = pitchNorm > 0.5 ? 'triangle' : 'sine';
+    noteOsc.frequency.value = freq;
+
+    const noteGain = audioCtx.createGain();
+    noteGain.gain.setValueAtTime(0, noteStart);
+    noteGain.gain.linearRampToValueAtTime(0.4, noteStart + 0.02);
+    noteGain.gain.linearRampToValueAtTime(0.28, noteStart + noteDur * 0.6);
+    noteGain.gain.linearRampToValueAtTime(0.0,  noteStart + noteDur);
+
+    noteOsc.connect(noteGain);
+    noteGain.connect(masterGain);
+    noteGain.connect(convolver);
+
+    noteOsc.start(noteStart);
+    noteOsc.stop(noteStart + noteDur + 0.05);
+  }
+
+  // Fade out master after totalDur
+  masterGain.gain.linearRampToValueAtTime(0.55, t + totalDur - 1.5);
+  masterGain.gain.linearRampToValueAtTime(0.0,  t + totalDur);
+
+  if (onComplete) {
+    resultAudioTimeout = setTimeout(onComplete, totalDur * 1000);
+  }
+}
+
+function stopResultAudio() {
+  clearTimeout(resultAudioTimeout);
+  resultNoteTimeouts.forEach(clearTimeout);
+  if (masterGain) stopAudio(0.3);
+}
+
+/* ── Pad rendering ────────────────────────────────────────────── */
+const PAD_PARTICLES = Array.from({length: 36}, () => ({
+  x: Math.random(), y: Math.random(),
+  vx: (Math.random()-0.5)*0.002, vy: (Math.random()-0.5)*0.002,
+  r: Math.random()*1.8+0.4, a: Math.random()
+}));
+
+let padAnimId = null;
+let trailPoints = [];
+
+function drawPad() {
+  const W = echoPad.width, H = echoPad.height;
+  padCtx.clearRect(0, 0, W, H);
+
+  // Background gradient
+  const bg = padCtx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0,   'rgba(13,21,36,0.9)');
+  bg.addColorStop(1,   'rgba(7,9,15,0.9)');
+  padCtx.fillStyle = bg;
+  padCtx.beginPath();
+  if (padCtx.roundRect) {
+    padCtx.roundRect(0, 0, W, H, 14);
+  } else {
+    const r = 14;
+    padCtx.moveTo(r, 0);
+    padCtx.lineTo(W - r, 0); padCtx.arcTo(W, 0, W, r, r);
+    padCtx.lineTo(W, H - r); padCtx.arcTo(W, H, W - r, H, r);
+    padCtx.lineTo(r, H);     padCtx.arcTo(0, H, 0, H - r, r);
+    padCtx.lineTo(0, r);     padCtx.arcTo(0, 0, r, 0, r);
+    padCtx.closePath();
+  }
+  padCtx.fill();
+
+  // Grid lines
+  padCtx.strokeStyle = 'rgba(74,243,255,0.07)';
+  padCtx.lineWidth   = 1;
+  for (let i = 1; i < 4; i++) {
+    padCtx.beginPath(); padCtx.moveTo(W*i/4, 0); padCtx.lineTo(W*i/4, H); padCtx.stroke();
+    padCtx.beginPath(); padCtx.moveTo(0, H*i/4); padCtx.lineTo(W, H*i/4); padCtx.stroke();
+  }
+
+  // Floating particles
+  const now = Date.now() * 0.001;
+  PAD_PARTICLES.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+    if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
+    const alpha = 0.2 + 0.1 * Math.sin(now + p.a * 6);
+    padCtx.beginPath();
+    padCtx.arc(p.x*W, p.y*H, p.r, 0, Math.PI*2);
+    padCtx.fillStyle = `rgba(74,243,255,${alpha})`;
+    padCtx.fill();
+  });
+
+  // Trail
+  if (trailPoints.length > 1) {
+    padCtx.beginPath();
+    padCtx.moveTo(trailPoints[0].x * W, trailPoints[0].y * H);
+    for (let i = 1; i < trailPoints.length; i++) {
+      padCtx.lineTo(trailPoints[i].x * W, trailPoints[i].y * H);
+    }
+    padCtx.strokeStyle = 'rgba(74,243,255,0.25)';
+    padCtx.lineWidth   = 2;
+    padCtx.lineJoin    = 'round';
+    padCtx.lineCap     = 'round';
+    padCtx.stroke();
+  }
+
+  // Cursor glow halo
+  const cx = state.rhythmNorm * W;
+  const cy = (1 - state.pitchNorm) * H;
+  const halo = padCtx.createRadialGradient(cx, cy, 0, cx, cy, 55);
+  halo.addColorStop(0,   'rgba(74,243,255,0.18)');
+  halo.addColorStop(0.4, 'rgba(139,92,246,0.08)');
+  halo.addColorStop(1,   'rgba(0,0,0,0)');
+  padCtx.beginPath();
+  padCtx.arc(cx, cy, 55, 0, Math.PI*2);
+  padCtx.fillStyle = halo;
+  padCtx.fill();
+
+  // Cursor dot
+  const pulse = 0.7 + 0.3 * Math.sin(now * 4);
+  padCtx.beginPath();
+  padCtx.arc(cx, cy, 8, 0, Math.PI*2);
+  padCtx.fillStyle = `rgba(74,243,255,${pulse})`;
+  padCtx.shadowColor = '#4af3ff';
+  padCtx.shadowBlur  = 14;
+  padCtx.fill();
+  padCtx.shadowBlur  = 0;
+
+  // Cross-hair lines from cursor
+  padCtx.strokeStyle = 'rgba(74,243,255,0.15)';
+  padCtx.lineWidth   = 1;
+  padCtx.setLineDash([4, 6]);
+  padCtx.beginPath(); padCtx.moveTo(cx, 0); padCtx.lineTo(cx, H); padCtx.stroke();
+  padCtx.beginPath(); padCtx.moveTo(0, cy); padCtx.lineTo(W, cy); padCtx.stroke();
+  padCtx.setLineDash([]);
+
+  padAnimId = requestAnimationFrame(drawPad);
+}
+
+function stopPadAnim() {
+  if (padAnimId) { cancelAnimationFrame(padAnimId); padAnimId = null; }
+}
+
+/* ── Result waveform visualiser ──────────────────────────────── */
+let waveAnimId = null;
+
+function drawResultWave() {
+  const W = resultWave.width, H = resultWave.height;
+  waveCtx.clearRect(0, 0, W, H);
+
+  if (!analyser) return;
+  const bufLen = analyser.frequencyBinCount;
+  const data   = new Uint8Array(bufLen);
+  analyser.getByteTimeDomainData(data);
+
+  waveCtx.beginPath();
+  const sliceW = W / bufLen;
+  let x = 0;
+  for (let i = 0; i < bufLen; i++) {
+    const v = data[i] / 128;
+    const y = (v * H) / 2;
+    if (i === 0) waveCtx.moveTo(x, y);
+    else         waveCtx.lineTo(x, y);
+    x += sliceW;
+  }
+  waveCtx.strokeStyle = '#4af3ff';
+  waveCtx.lineWidth   = 2;
+  waveCtx.shadowColor = '#4af3ff';
+  waveCtx.shadowBlur  = 8;
+  waveCtx.stroke();
+  waveCtx.shadowBlur  = 0;
+
+  waveAnimId = requestAnimationFrame(drawResultWave);
+}
+
+function stopWaveAnim() {
+  if (waveAnimId) { cancelAnimationFrame(waveAnimId); waveAnimId = null; }
+}
+
+/* ── Fingerprint logic ───────────────────────────────────────── */
+const FINGERPRINTS = [
+  // [pitchMin, pitchMax, rhythmMin, rhythmMax, label, community, adj1, adj2]
+  { pMin:0.67, pMax:1,    rMin:0.5, rMax:1,    label:'Radiant Storm',    community:'The High Energy Arena',   adj:'electric, soaring'  },
+  { pMin:0.67, pMax:1,    rMin:0,   rMax:0.5,  label:'Crystal Horizon',  community:'The Open Sky',             adj:'bright, expansive'  },
+  { pMin:0.33, pMax:0.67, rMin:0.5, rMax:1,    label:'Flowing Current',  community:'The Rhythm Collective',    adj:'dynamic, fluid'     },
+  { pMin:0.33, pMax:0.67, rMin:0,   rMax:0.5,  label:'Still Waters',     community:'The Balanced Path',        adj:'centred, grounded'  },
+  { pMin:0,    pMax:0.33, rMin:0.5, rMax:1,    label:'Deep Tide',        community:'The Deep Current',         adj:'intense, mysterious'},
+  { pMin:0,    pMax:0.33, rMin:0,   rMax:0.5,  label:'Silent Root',      community:'The Quiet Trail',          adj:'calm, introspective'},
+];
+
+function getFingerprint(p, r) {
+  return FINGERPRINTS.find(f => p >= f.pMin && p < f.pMax && r >= f.rMin && r < f.rMax) || FINGERPRINTS[5];
+}
+
+function getPitchLabel(p) {
+  if (p > 0.75) return 'Very High';
+  if (p > 0.5)  return 'High';
+  if (p > 0.25) return 'Low';
+  return 'Very Low';
+}
+
+function getRhythmLabel(r) {
+  if (r > 0.75) return 'Very Dense';
+  if (r > 0.5)  return 'Dense';
+  if (r > 0.25) return 'Sparse';
+  return 'Very Sparse';
+}
+
+function generateUsername() {
+  const adj   = ['Wanderer','Seeker','Drifter','Echo','Pulse','Wave','Arc','Void','Glow','Spark'];
+  const pick  = adj[Math.floor(Math.random() * adj.length)];
+  const hex   = Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4,'0');
+  return `${pick}#${hex}`;
+}
+
+/* ── Timer ────────────────────────────────────────────────────── */
+function updateTimer(secsLeft) {
+  const pct     = secsLeft / GAME_DURATION;
+  const offset  = CIRCUMFERENCE * (1 - pct);
+  timerArc.style.strokeDashoffset = offset;
+  timerText.textContent = secsLeft;
+  // Colour: green→yellow→red
+  if (secsLeft > 6)      timerArc.style.stroke = '#4af3ff';
+  else if (secsLeft > 3) timerArc.style.stroke = '#fbbf24';
+  else                   timerArc.style.stroke = '#f87171';
+}
+
+function startTimer() {
+  state.timerSecs = GAME_DURATION;
+  updateTimer(GAME_DURATION);
+  state.timerInterval = setInterval(() => {
+    state.timerSecs--;
+    updateTimer(state.timerSecs);
+    if (state.timerSecs <= 0) finishGame();
+  }, 1000);
+}
+
+function clearTimer() {
+  clearInterval(state.timerInterval);
+  clearTimeout(state.autoFinishTimeout);
+}
+
+/* ── Pad interaction ──────────────────────────────────────────── */
+function padCoordToState(clientX, clientY) {
+  const rect = echoPad.getBoundingClientRect();
+  const x    = Math.max(0, Math.min(1, (clientX - rect.left)  / rect.width));
+  const y    = Math.max(0, Math.min(1, (clientY - rect.top)   / rect.height));
+  state.rhythmNorm = x;
+  state.pitchNorm  = 1 - y;  // top = high pitch
+  trailPoints.push({x, y: 1 - state.pitchNorm});
+  if (trailPoints.length > 40) trailPoints.shift();
+}
+
+function onPadStart(e) {
+  e.preventDefault();
+  if (!state.active) return;
+  const src = e.touches ? e.touches[0] : e;
+  padCoordToState(src.clientX, src.clientY);
+  if (!state.hasInteracted) {
+    state.hasInteracted = true;
+    startTimer();
+    startAudio();
+  } else {
+    updateAudio();
+  }
+}
+
+function onPadMove(e) {
+  e.preventDefault();
+  if (!state.active) return;
+  const src = e.touches ? e.touches[0] : e;
+  padCoordToState(src.clientX, src.clientY);
+  if (state.hasInteracted) updateAudio();
+}
+
+echoPad.addEventListener('mousedown',  onPadStart);
+echoPad.addEventListener('mousemove',  (e) => { if (e.buttons && state.active) onPadMove(e); });
+echoPad.addEventListener('touchstart', onPadStart, { passive: false });
+echoPad.addEventListener('touchmove',  onPadMove,  { passive: false });
+
+/* ── Screen transitions ───────────────────────────────────────── */
+function showScreen(screenEl) {
+  [screenIntro, screenGame, screenResult].forEach(s => s.classList.remove('active'));
+  screenEl.classList.add('active');
+}
+
+/* ── Game flow ────────────────────────────────────────────────── */
+function beginGame() {
+  state.active       = false;
+  state.hasInteracted= false;
+  state.pitchNorm    = 0.5;
+  state.rhythmNorm   = 0.5;
+  trailPoints        = [];
+  clearTimer();
+  stopResultAudio();
+  stopWaveAnim();
+  showScreen(screenGame);
+
+  // Resize canvas to container
+  const cw = echoPad.parentElement.clientWidth;
+  echoPad.width  = Math.max(200, Math.min(460, cw));
+  echoPad.height = Math.round(echoPad.width * 0.565);
+
+  state.active = true;
+  updateTimer(GAME_DURATION);
+  drawPad();
+}
+
+function finishGame() {
+  state.active = false;
+  clearTimer();
+  stopPadAnim();
+  stopAudio(0.5);
+
+  const fp    = getFingerprint(state.pitchNorm, state.rhythmNorm);
+  const uname = generateUsername();
+  const pitchLabel  = getPitchLabel(state.pitchNorm);
+  const rhythmLabel = getRhythmLabel(state.rhythmNorm);
+
+  // Populate result screen
+  document.getElementById('result-fp-label').textContent  = `"${fp.label}"`;
+  document.getElementById('result-sentence').textContent  =
+    `Your emotional fingerprint is ${fp.label}. ${fp.adj.charAt(0).toUpperCase() + fp.adj.slice(1)} energy shapes your unique echo.`;
+  document.getElementById('result-username').textContent  = uname;
+  document.getElementById('result-community').textContent = fp.community;
+  document.getElementById('result-pitch').textContent     = pitchLabel;
+  document.getElementById('result-rhythm').textContent    = rhythmLabel;
+  document.getElementById('result-note-info').innerHTML   =
+    `Playing your echo &mdash; <span>${pitchLabel} pitch · ${rhythmLabel} rhythm</span>`;
+
+  showScreen(screenResult);
+  updateShareButton();
+
+  // Store in localStorage
+  const fpData = {
+    fingerprint:  fp.label,
+    community:    fp.community,
+    username:     uname,
+    pitchNorm:    state.pitchNorm,
+    rhythmNorm:   state.rhythmNorm,
+    pitchLabel,
+    rhythmLabel,
+    adjectives:   fp.adj,
+    capturedAt:   new Date().toISOString(),
+  };
+  try { localStorage.setItem('resonance_fingerprint', JSON.stringify(fpData)); } catch(e) {}
+
+  // Play result audio fragment
+  drawResultWave();
+  playResultFragment(state.pitchNorm, state.rhythmNorm, null);
+}
+
+function enterPlatform() {
+  stopResultAudio();
+  stopWaveAnim();
+
+  // Load stored fingerprint for homepage card
+  let fp = null;
+  try { fp = JSON.parse(localStorage.getItem('resonance_fingerprint')); } catch(e) {}
+
+  if (fp) {
+    document.getElementById('home-username').textContent  = fp.username;
+    document.getElementById('home-fp').textContent        = fp.fingerprint;
+    document.getElementById('home-community').textContent = fp.community;
+    document.getElementById('home-pitch').textContent     = fp.pitchLabel;
+    document.getElementById('home-rhythm').textContent    = fp.rhythmLabel;
+    document.getElementById('home-fp-card').style.display = '';
+  }
+
+  modalOverlay.classList.add('fade-out');
+  platformHome.setAttribute('aria-hidden', 'false');
+  platformHome.classList.add('visible');
+
+  setTimeout(() => { modalOverlay.style.display = 'none'; }, 750);
+}
+
+/* ── Button wiring ────────────────────────────────────────────── */
+btnBegin.addEventListener('click', () => {
+  beginGame();
+});
+
+btnFinish.addEventListener('click', () => {
+  if (state.hasInteracted) {
+    finishGame();
+  } else {
+    // If user never interacted, still finish with default center position
+    state.hasInteracted = true;
+    finishGame();
+  }
+});
+
+btnEnter.addEventListener('click', enterPlatform);
+
+btnReplay.addEventListener('click', () => {
+  stopResultAudio();
+  stopWaveAnim();
+  showScreen(screenIntro);
+});
+
+/* ── Responsive canvas resize ─────────────────────────────────── */
+window.addEventListener('resize', () => {
+  if (screenGame.classList.contains('active')) {
+    const cw = echoPad.parentElement.clientWidth;
+    echoPad.width  = Math.max(200, Math.min(460, cw));
+    echoPad.height = Math.round(echoPad.width * 0.565);
+    trailPoints = [];
+  }
+});
+
+/* ── Handle stored fingerprint on return visits ────────────────── */
+(function checkExistingFingerprint() {
+  // Always show the game on load (fresh entry to the site)
+  // (The modal is always shown; users can re-enter the platform via "Enter Resonance")
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   COMMUNITY FEATURE
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Mock community data (10 virtual echoes, all 6 fingerprint types) ── */
+const MOCK_COMMUNITY = [
+  { username: 'Spark#FF3A',    fingerprint: 'Radiant Storm',   community: 'The High Energy Arena',  pitchNorm: 0.82, rhythmNorm: 0.78, pitchLabel: 'Very High', rhythmLabel: 'Very Dense',  capturedAt: '2026-04-07T14:22:00Z', isMock: true },
+  { username: 'Drifter#2C9E',  fingerprint: 'Silent Root',     community: 'The Quiet Trail',         pitchNorm: 0.12, rhythmNorm: 0.18, pitchLabel: 'Very Low',  rhythmLabel: 'Very Sparse', capturedAt: '2026-04-07T10:05:00Z', isMock: true },
+  { username: 'Wave#B471',     fingerprint: 'Flowing Current', community: 'The Rhythm Collective',   pitchNorm: 0.55, rhythmNorm: 0.73, pitchLabel: 'High',       rhythmLabel: 'Dense',        capturedAt: '2026-04-06T22:41:00Z', isMock: true },
+  { username: 'Arc#0D5F',      fingerprint: 'Crystal Horizon', community: 'The Open Sky',            pitchNorm: 0.79, rhythmNorm: 0.28, pitchLabel: 'Very High', rhythmLabel: 'Sparse',       capturedAt: '2026-04-06T18:17:00Z', isMock: true },
+  { username: 'Echo#7A3C',     fingerprint: 'Still Waters',    community: 'The Balanced Path',       pitchNorm: 0.48, rhythmNorm: 0.38, pitchLabel: 'Low',        rhythmLabel: 'Sparse',       capturedAt: '2026-04-06T09:53:00Z', isMock: true },
+  { username: 'Glow#E1B2',     fingerprint: 'Deep Tide',       community: 'The Deep Current',        pitchNorm: 0.21, rhythmNorm: 0.67, pitchLabel: 'Very Low',  rhythmLabel: 'Dense',        capturedAt: '2026-04-05T20:30:00Z', isMock: true },
+  { username: 'Pulse#4D88',    fingerprint: 'Radiant Storm',   community: 'The High Energy Arena',   pitchNorm: 0.91, rhythmNorm: 0.85, pitchLabel: 'Very High', rhythmLabel: 'Very Dense',  capturedAt: '2026-04-05T15:44:00Z', isMock: true },
+  { username: 'Void#C23A',     fingerprint: 'Silent Root',     community: 'The Quiet Trail',         pitchNorm: 0.08, rhythmNorm: 0.22, pitchLabel: 'Very Low',  rhythmLabel: 'Very Sparse', capturedAt: '2026-04-05T08:12:00Z', isMock: true },
+  { username: 'Seeker#9F61',   fingerprint: 'Crystal Horizon', community: 'The Open Sky',            pitchNorm: 0.74, rhythmNorm: 0.31, pitchLabel: 'Very High', rhythmLabel: 'Sparse',       capturedAt: '2026-04-04T21:07:00Z', isMock: true },
+  { username: 'Wanderer#1E4D', fingerprint: 'Flowing Current', community: 'The Rhythm Collective',   pitchNorm: 0.51, rhythmNorm: 0.62, pitchLabel: 'High',       rhythmLabel: 'Dense',        capturedAt: '2026-04-04T14:33:00Z', isMock: true },
+];
+
+/* ── Community helpers ─────────────────────────────────────────── */
+function getCommunityEntries() {
+  const entries = [...MOCK_COMMUNITY];
+  try {
+    const shared = JSON.parse(localStorage.getItem('resonance_community') || '[]');
+    entries.unshift(...shared);
+  } catch(e) {}
+  return entries;
+}
+
+function getUserFingerprint() {
+  try { return JSON.parse(localStorage.getItem('resonance_fingerprint')); } catch(e) { return null; }
+}
+
+function isAlreadyShared() {
+  const fp = getUserFingerprint();
+  if (!fp) return false;
+  try {
+    const shared = JSON.parse(localStorage.getItem('resonance_community') || '[]');
+    return shared.some(e => e.capturedAt === fp.capturedAt);
+  } catch(e) { return false; }
+}
+
+function formatEntryDate(isoStr) {
+  const d = new Date(isoStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+let currentPreviewEntry = null;
+let communityActiveFilter = 'all';
+
+function renderCommunityGrid(filter) {
+  if (filter !== undefined) communityActiveFilter = filter;
+  const grid = document.getElementById('community-grid');
+  let entries = getCommunityEntries();
+
+  if (communityActiveFilter === 'mine') {
+    const fp = getUserFingerprint();
+    if (fp) {
+      entries = entries.filter(e => e.community === fp.community);
+    } else {
+      entries = [];
+    }
+  }
+
+  if (entries.length === 0) {
+    grid.innerHTML = communityActiveFilter === 'mine'
+      ? '<div class="community-empty">Complete your echo first, then your community members will appear here.</div>'
+      : '<div class="community-empty">No echoes yet. Be the first to share!</div>';
+    return;
+  }
+
+  const fp = getUserFingerprint();
+  grid.innerHTML = entries.map((entry, idx) => {
+    const isYours = fp && !entry.isMock && entry.capturedAt === fp.capturedAt;
+    const isPlaying = currentPreviewEntry && currentPreviewEntry.capturedAt === entry.capturedAt;
+    return `
+      <div class="echo-card${isPlaying ? ' playing' : ''}" data-idx="${idx}">
+        ${isYours ? '<div class="echo-card-badge">You</div>' : ''}
+        <div class="echo-card-top">
+          <div class="echo-card-username">${entry.username}</div>
+          <div class="echo-card-date">${formatEntryDate(entry.capturedAt)}</div>
+        </div>
+        <div class="echo-card-fp">&ldquo;${entry.fingerprint}&rdquo;</div>
+        <div class="echo-card-community">${entry.community}</div>
+        <div class="echo-card-stats">
+          <span class="echo-stat-chip">Pitch: ${entry.pitchLabel}</span>
+          <span class="echo-stat-chip">Rhythm: ${entry.rhythmLabel}</span>
+        </div>
+        <button class="btn-preview" data-idx="${idx}">
+          ${isPlaying ? '&#9632; Stop' : '&#9654; Preview'}
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.btn-preview').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      const entry = entries[idx];
+      if (currentPreviewEntry && currentPreviewEntry.capturedAt === entry.capturedAt) {
+        stopResultAudio();
+        currentPreviewEntry = null;
+        renderCommunityGrid();
+      } else {
+        stopResultAudio();
+        currentPreviewEntry = entry;
+        renderCommunityGrid();
+        if (!audioCtx) initAudio();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        playResultFragment(entry.pitchNorm, entry.rhythmNorm, () => {
+          currentPreviewEntry = null;
+          renderCommunityGrid();
+        });
+      }
+    });
+  });
+}
+
+function openCommunity(filter) {
+  communityActiveFilter = filter || 'all';
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === communityActiveFilter);
+  });
+  renderCommunityGrid(communityActiveFilter);
+  const panel = document.getElementById('community-panel');
+  panel.removeAttribute('aria-hidden');
+  panel.classList.add('visible');
+}
+
+function closeCommunity() {
+  stopResultAudio();
+  currentPreviewEntry = null;
+  const panel = document.getElementById('community-panel');
+  panel.classList.remove('visible');
+  panel.setAttribute('aria-hidden', 'true');
+}
+
+/* ── Share to Community ────────────────────────────────────────── */
+function shareToCommunity() {
+  if (isAlreadyShared()) return;
+  const fp = getUserFingerprint();
+  if (!fp) return;
+  try {
+    const shared = JSON.parse(localStorage.getItem('resonance_community') || '[]');
+    shared.unshift(fp);
+    localStorage.setItem('resonance_community', JSON.stringify(shared));
+  } catch(e) {}
+  updateShareButton();
+}
+
+function updateShareButton() {
+  const btn = document.getElementById('btn-share');
+  if (!btn) return;
+  if (isAlreadyShared()) {
+    btn.textContent = '\u2713 Shared!';
+    btn.disabled = true;
+    btn.classList.remove('btn-outline');
+    btn.classList.add('btn-ghost');
+  } else {
+    btn.innerHTML = '&#8853; Share Echo';
+    btn.disabled = false;
+    btn.classList.add('btn-outline');
+    btn.classList.remove('btn-ghost');
+  }
+}
+
+/* ── Nav & community wiring ────────────────────────────────────── */
+document.getElementById('nav-explore').addEventListener('click', e => {
+  e.preventDefault();
+  const cu = getCurrentUser();
+  if (cu && cu.username) {
+    openProfile(cu.username);
+  } else {
+    openCommunity('all');
+  }
+});
+
+document.getElementById('nav-communities').addEventListener('click', e => {
+  e.preventDefault();
+  openCommunity('mine');
+});
+
+document.getElementById('nav-myecho').addEventListener('click', e => {
+  e.preventDefault();
+  modalOverlay.style.display = '';
+  modalOverlay.classList.remove('fade-out');
+  platformHome.classList.remove('visible');
+  platformHome.setAttribute('aria-hidden', 'true');
+  showScreen(screenIntro);
+});
+
+document.getElementById('nav-forum').addEventListener('click', e => {
+  e.preventDefault();
+  openForum();
+});
+
+document.getElementById('btn-close-community').addEventListener('click', closeCommunity);
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCommunityGrid(btn.dataset.tab);
+  });
+});
+
+document.getElementById('btn-share').addEventListener('click', shareToCommunity);
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 1 — USER AUTH (localStorage-based session)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── User session helpers ─────────────────────────────────────────
+   Reads from 'resonance_user' (set by real API login) OR falls back
+   to the legacy 'resonance_session' key (set by old mock auth). */
+function getCurrentUser() {
+  try {
+    return JSON.parse(localStorage.getItem('resonance_user') || 'null')
+        || JSON.parse(localStorage.getItem('resonance_session') || 'null');
+  } catch(e) { return null; }
+}
+
+function setCurrentUser(user) {
+  try {
+    localStorage.setItem('resonance_user',    JSON.stringify(user));
+    localStorage.setItem('resonance_session', JSON.stringify(user)); // legacy compat
+  } catch(e) {}
+}
+
+function logout() {
+  clearTokens();
+  localStorage.removeItem('resonance_session');
+  updateNavAuth();
+}
+
+/* ── Offline-fallback mock auth (used when API is unreachable) ─── */
+function _mockHash(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return h.toString(16);
+}
+function _getMockUsers() {
+  try { return JSON.parse(localStorage.getItem('resonance_users') || '[]'); } catch(e) { return []; }
+}
+function _saveMockUsers(u) {
+  try { localStorage.setItem('resonance_users', JSON.stringify(u)); } catch(e) {}
+}
+function _mockLogin(identifier, password) {
+  const users = _getMockUsers();
+  const user  = users.find(u =>
+    u.username.toLowerCase() === identifier.trim().toLowerCase() ||
+    u.email === identifier.trim().toLowerCase()
+  );
+  if (!user) return 'User not found (offline mode).';
+  if (user.passwordHash !== _mockHash(password)) return 'Incorrect password.';
+  setCurrentUser({ id: user.id, username: user.username, email: user.email, createdAt: user.createdAt });
+  return null;
+}
+function _mockSignUp(username, email, password) {
+  username = username.trim(); email = email.trim().toLowerCase();
+  if (!username || username.length < 2) return 'Username must be at least 2 characters.';
+  if (!/\S+@\S+\.\S+/.test(email))      return 'Please enter a valid email.';
+  if (password.length < 6)              return 'Password must be at least 6 characters.';
+  const users = _getMockUsers();
+  if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) return 'Username already taken.';
+  if (users.some(u => u.email === email)) return 'Email already registered.';
+  const user = { id: Date.now().toString(36), username, email, passwordHash: _mockHash(password), createdAt: new Date().toISOString() };
+  users.push(user);
+  _saveMockUsers(users);
+  setCurrentUser({ id: user.id, username: user.username, email: user.email, createdAt: user.createdAt });
+  return null;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function updateNavAuth() {
+  const area = document.getElementById('nav-auth-area');
+  const user = getCurrentUser();
+  if (user) {
+    area.innerHTML =
+      '<span class="nav-user-chip">&#9675; ' + escapeHtml(user.username) + '</span>' +
+      '<button class="btn btn-ghost btn-sm" id="btn-do-logout" style="font-size:0.7rem">Logout</button>';
+    document.getElementById('btn-do-logout').addEventListener('click', logout);
+  } else {
+    area.innerHTML = '<button class="btn btn-outline btn-sm" id="btn-open-auth" style="font-size:0.75rem">&#9675; Login / Sign Up</button>';
+    document.getElementById('btn-open-auth').addEventListener('click', () => openAuth());
+  }
+}
+
+function openAuth(defaultTab) {
+  const panel = document.getElementById('auth-panel');
+  panel.classList.add('visible');
+  panel.removeAttribute('aria-hidden');
+  if (defaultTab === 'signup') switchAuthTab('signup');
+  else switchAuthTab('login');
+  document.getElementById('login-error').textContent  = '';
+  document.getElementById('signup-error').textContent = '';
+}
+
+function closeAuth() {
+  const panel = document.getElementById('auth-panel');
+  panel.classList.remove('visible');
+  panel.setAttribute('aria-hidden', 'true');
+}
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.authTab === tab));
+  document.getElementById('auth-login-form').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('auth-signup-form').classList.toggle('hidden', tab !== 'signup');
+  document.getElementById('auth-switch-text').textContent = tab === 'login' ? "Don't have an account?" : 'Already have an account?';
+  document.getElementById('auth-switch-btn').textContent  = tab === 'login' ? ' Sign up' : ' Login';
+}
+
+document.getElementById('btn-close-auth').addEventListener('click', closeAuth);
+document.querySelectorAll('.auth-tab').forEach(btn => btn.addEventListener('click', () => switchAuthTab(btn.dataset.authTab)));
+document.getElementById('auth-switch-btn').addEventListener('click', () => {
+  const loginActive = !document.getElementById('auth-login-form').classList.contains('hidden');
+  switchAuthTab(loginActive ? 'signup' : 'login');
+});
+
+document.getElementById('btn-do-login').addEventListener('click', async () => {
+  const identifier = document.getElementById('login-username').value.trim();
+  const pwd   = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('btn-do-login');
+  if (!identifier || !pwd) { errEl.textContent = 'Please enter username/email and password.'; return; }
+  btn.disabled = true; btn.textContent = 'Logging in…';
+  try {
+    const resp = await apiFetch('/auth/login', { method: 'POST', body: { identifier, password: pwd } });
+    const data = await resp.json();
+    if (!resp.ok) { errEl.textContent = data.error || 'Login failed.'; return; }
+    setTokens(data.accessToken, data.refreshToken);
+    setCurrentUser(data.user);
+    closeAuth(); updateNavAuth();
+  } catch(e) {
+    // Backend unreachable — fall back to offline mock auth
+    const err = _mockLogin(identifier, pwd);
+    if (err) { errEl.textContent = err; }
+    else     { closeAuth(); updateNavAuth(); }
+  } finally { btn.disabled = false; btn.textContent = 'Login ›'; }
+});
+
+document.getElementById('btn-do-signup').addEventListener('click', async () => {
+  const uname = document.getElementById('su-username').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pwd   = document.getElementById('su-password').value;
+  const errEl = document.getElementById('signup-error');
+  const btn   = document.getElementById('btn-do-signup');
+  if (!uname || !email || !pwd) { errEl.textContent = 'All fields are required.'; return; }
+  if (pwd.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
+  btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    const resp = await apiFetch('/auth/register', { method: 'POST', body: { username: uname, email, password: pwd } });
+    const data = await resp.json();
+    if (!resp.ok) { errEl.textContent = data.error || 'Registration failed.'; return; }
+    setTokens(data.accessToken, data.refreshToken);
+    setCurrentUser(data.user);
+    closeAuth(); updateNavAuth();
+  } catch(e) {
+    // Backend unreachable — fall back to offline mock auth
+    const err = _mockSignUp(uname, email, pwd);
+    if (err) { errEl.textContent = err; }
+    else     { closeAuth(); updateNavAuth(); }
+  } finally { btn.disabled = false; btn.textContent = 'Create Account ›'; }
+});
+
+updateNavAuth();
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 2 — FORUM (Music Feed + Comments)
+   ══════════════════════════════════════════════════════════════════ */
+
+// ── Mock user profiles (8 dummy accounts) ────────────────────────
+const MOCK_USERS = [
+  { id: 'mu-1', username: 'Drifter#2C9E', fingerprint: 'Silent Root',     community: 'The Quiet Trail',       pitchNorm: 0.12, rhythmNorm: 0.18, joined: '2026-03-10' },
+  { id: 'mu-2', username: 'Spark#FF3A',   fingerprint: 'Radiant Storm',   community: 'The High Energy Arena', pitchNorm: 0.88, rhythmNorm: 0.82, joined: '2026-02-28' },
+  { id: 'mu-3', username: 'Wave#B471',    fingerprint: 'Flowing Current', community: 'The Rhythm Collective', pitchNorm: 0.55, rhythmNorm: 0.69, joined: '2026-03-15' },
+  { id: 'mu-4', username: 'Arc#0D5F',     fingerprint: 'Crystal Horizon', community: 'The Open Sky',          pitchNorm: 0.77, rhythmNorm: 0.24, joined: '2026-03-01' },
+  { id: 'mu-5', username: 'Glow#E1B2',    fingerprint: 'Deep Tide',       community: 'The Deep Current',      pitchNorm: 0.18, rhythmNorm: 0.72, joined: '2026-03-22' },
+  { id: 'mu-6', username: 'Echo#7A3C',    fingerprint: 'Still Waters',    community: 'The Balanced Path',     pitchNorm: 0.44, rhythmNorm: 0.41, joined: '2026-02-14' },
+  { id: 'mu-7', username: 'Pulse#4D88',   fingerprint: 'Radiant Storm',   community: 'The High Energy Arena', pitchNorm: 0.92, rhythmNorm: 0.88, joined: '2026-04-01' },
+  { id: 'mu-8', username: 'Seeker#9F61',  fingerprint: 'Flowing Current', community: 'The Rhythm Collective', pitchNorm: 0.58, rhythmNorm: 0.52, joined: '2026-03-30' },
+];
+
+// ── Mock forum posts (10 preset entries) ─────────────────────────
+const MOCK_POSTS = [
+  {
+    id: 'mock-1', title: 'Late Night Signals', isMock: true,
+    description: 'I made this at 2am. The low pitch felt like the city breathing beneath me.',
+    username: 'Drifter#2C9E', fingerprint: 'Silent Root', community: 'The Quiet Trail',
+    pitchNorm: 0.12, rhythmNorm: 0.18, pitchLabel: 'Very Low', rhythmLabel: 'Very Sparse',
+    createdAt: '2026-04-07T02:11:00Z', likes: 14,
+    comments: [
+      { username: 'Wave#B471', text: 'This one hits different late at night. So calm.', createdAt: '2026-04-07T08:33:00Z' },
+      { username: 'Arc#0D5F',  text: 'Pure introspection. Love it.', createdAt: '2026-04-07T09:14:00Z' },
+    ],
+  },
+  {
+    id: 'mock-2', title: 'Storm Before Dawn', isMock: true,
+    description: 'Maximum energy. I was running on adrenaline when I built this.',
+    username: 'Spark#FF3A', fingerprint: 'Radiant Storm', community: 'The High Energy Arena',
+    pitchNorm: 0.88, rhythmNorm: 0.82, pitchLabel: 'Very High', rhythmLabel: 'Very Dense',
+    createdAt: '2026-04-06T18:45:00Z', likes: 31,
+    comments: [
+      { username: 'Pulse#4D88', text: 'Electric energy!! Played on repeat.', createdAt: '2026-04-06T19:02:00Z' },
+    ],
+  },
+  {
+    id: 'mock-3', title: 'River Drift', isMock: true,
+    description: 'Mid-range, flowing — like water finding its path. No destination needed.',
+    username: 'Wave#B471', fingerprint: 'Flowing Current', community: 'The Rhythm Collective',
+    pitchNorm: 0.55, rhythmNorm: 0.69, pitchLabel: 'High', rhythmLabel: 'Dense',
+    createdAt: '2026-04-06T11:30:00Z', likes: 22,
+    comments: [
+      { username: 'Echo#7A3C', text: 'The rhythm on this is perfect.', createdAt: '2026-04-06T12:05:00Z' },
+      { username: 'Glow#E1B2', text: 'Feels like a summer afternoon.', createdAt: '2026-04-06T14:17:00Z' },
+    ],
+  },
+  {
+    id: 'mock-4', title: 'Sky Archipelago', isMock: true,
+    description: 'Bright and sparse — an open sky with islands of sound.',
+    username: 'Arc#0D5F', fingerprint: 'Crystal Horizon', community: 'The Open Sky',
+    pitchNorm: 0.77, rhythmNorm: 0.24, pitchLabel: 'Very High', rhythmLabel: 'Very Sparse',
+    createdAt: '2026-04-05T20:00:00Z', likes: 18,
+    comments: [],
+  },
+  {
+    id: 'mock-5', title: 'Deep Water Memory', isMock: true,
+    description: 'Dark and rhythmic. Feels like pressure building, then releasing.',
+    username: 'Glow#E1B2', fingerprint: 'Deep Tide', community: 'The Deep Current',
+    pitchNorm: 0.18, rhythmNorm: 0.72, pitchLabel: 'Very Low', rhythmLabel: 'Dense',
+    createdAt: '2026-04-05T09:22:00Z', likes: 27,
+    comments: [
+      { username: 'Void#C23A', text: 'This is haunting. In the best way.', createdAt: '2026-04-05T11:40:00Z' },
+    ],
+  },
+  {
+    id: 'mock-6', title: 'Balance Point', isMock: true,
+    description: 'Centred, grounded. Made this during meditation.',
+    username: 'Echo#7A3C', fingerprint: 'Still Waters', community: 'The Balanced Path',
+    pitchNorm: 0.44, rhythmNorm: 0.41, pitchLabel: 'Low', rhythmLabel: 'Sparse',
+    createdAt: '2026-04-04T16:08:00Z', likes: 9,
+    comments: [
+      { username: 'Seeker#9F61', text: 'This one grounds me.', createdAt: '2026-04-04T17:00:00Z' },
+    ],
+  },
+  {
+    id: 'mock-7', title: 'Cascade Protocol', isMock: true,
+    description: 'Dense rhythms layered into something that moves. Cannot stop playing this.',
+    username: 'Pulse#4D88', fingerprint: 'Radiant Storm', community: 'The High Energy Arena',
+    pitchNorm: 0.92, rhythmNorm: 0.88, pitchLabel: 'Very High', rhythmLabel: 'Very Dense',
+    createdAt: '2026-04-03T22:55:00Z', likes: 45,
+    comments: [
+      { username: 'Spark#FF3A', text: 'Absolute fire', createdAt: '2026-04-03T23:10:00Z' },
+      { username: 'Wave#B471',  text: 'The density on this is insane.', createdAt: '2026-04-04T00:02:00Z' },
+    ],
+  },
+  {
+    id: 'mock-8', title: 'Whispering Depth', isMock: true,
+    description: 'Very quiet, very slow. Like breath in an empty room.',
+    username: 'Void#C23A', fingerprint: 'Silent Root', community: 'The Quiet Trail',
+    pitchNorm: 0.06, rhythmNorm: 0.14, pitchLabel: 'Very Low', rhythmLabel: 'Very Sparse',
+    createdAt: '2026-04-03T07:45:00Z', likes: 11,
+    comments: [],
+  },
+  {
+    id: 'mock-9', title: 'Noon Mirage', isMock: true,
+    description: 'Warm mid-range tones floating over a steady pulse — feels like heat shimmer on pavement.',
+    username: 'Seeker#9F61', fingerprint: 'Flowing Current', community: 'The Rhythm Collective',
+    pitchNorm: 0.58, rhythmNorm: 0.52, pitchLabel: 'High', rhythmLabel: 'Moderate',
+    createdAt: '2026-04-02T13:20:00Z', likes: 16,
+    comments: [
+      { username: 'Drifter#2C9E', text: 'The midday energy is real here.', createdAt: '2026-04-02T14:55:00Z' },
+      { username: 'Arc#0D5F',     text: 'Steady and warm. Love the balance.', createdAt: '2026-04-02T16:30:00Z' },
+    ],
+  },
+  {
+    id: 'mock-10', title: 'Void Signal', isMock: true,
+    description: 'Sub-bass frequencies layered with erratic high bursts. Feels like static from another dimension.',
+    username: 'Echo#7A3C', fingerprint: 'Deep Tide', community: 'The Deep Current',
+    pitchNorm: 0.22, rhythmNorm: 0.65, pitchLabel: 'Low', rhythmLabel: 'Dense',
+    createdAt: '2026-04-01T21:05:00Z', likes: 33,
+    comments: [
+      { username: 'Pulse#4D88', text: 'This has an eerie pull I cannot explain.', createdAt: '2026-04-01T22:18:00Z' },
+      { username: 'Glow#E1B2',  text: 'Sounds like deep ocean bioluminescence.', createdAt: '2026-04-02T00:44:00Z' },
+      { username: 'Wave#B471',  text: 'Instant classic.', createdAt: '2026-04-02T07:11:00Z' },
+    ],
+  },
+];
+
+function getForumPosts() {
+  const real = [];
+  try { real.push(...JSON.parse(localStorage.getItem('resonance_posts') || '[]')); } catch(e) {}
+  return [...real, ...MOCK_POSTS];
+}
+
+function getLikes() {
+  try { return JSON.parse(localStorage.getItem('resonance_likes') || '{}'); } catch(e) { return {}; }
+}
+function saveLikes(obj) {
+  try { localStorage.setItem('resonance_likes', JSON.stringify(obj)); } catch(e) {}
+}
+function getPostComments(postId) {
+  try { return JSON.parse(localStorage.getItem('resonance_comments_' + postId) || 'null'); } catch(e) { return null; }
+}
+function savePostComments(postId, comments) {
+  try { localStorage.setItem('resonance_comments_' + postId, JSON.stringify(comments)); } catch(e) {}
+}
+
+let forumPlayingId = null;
+let forumWaveAnimId = null;
+let forumActiveTab = 'all'; // 'all' | 'myvibe'
+
+function drawStaticWaveform(canvas, pitchNorm, rhythmNorm) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const freq = rhythmNorm * 6 + 1;
+  const amp  = pitchNorm * (H * 0.38) + H * 0.08;
+  ctx.beginPath();
+  for (let x = 0; x <= W; x++) {
+    const t = x / W;
+    const y = H / 2 + amp * Math.sin(t * Math.PI * 2 * freq) * Math.exp(-t * 0.8) * Math.sin(t * Math.PI);
+    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, '#fbbf24');
+  grad.addColorStop(0.5, '#f472b6');
+  grad.addColorStop(1, '#8b5cf6');
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 1.8;
+  ctx.shadowColor = '#fbbf24';
+  ctx.shadowBlur = 4;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function startForumWaveAnim(pid) {
+  if (forumWaveAnimId) cancelAnimationFrame(forumWaveAnimId);
+  function tick() {
+    const canvas = document.getElementById('fw-' + pid);
+    if (!canvas || forumPlayingId !== pid) { forumWaveAnimId = null; return; }
+    if (analyser) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteTimeDomainData(data);
+      ctx.beginPath();
+      const sw = W / data.length;
+      for (let i = 0; i < data.length; i++) {
+        const v = data[i] / 128;
+        const y = (v * H) / 2;
+        if (i === 0) ctx.moveTo(0, y); else ctx.lineTo(i * sw, y);
+      }
+      const grad = ctx.createLinearGradient(0, 0, W, 0);
+      grad.addColorStop(0, '#fbbf24'); grad.addColorStop(0.5, '#f472b6'); grad.addColorStop(1, '#8b5cf6');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.8;
+      ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 4;
+      ctx.stroke(); ctx.shadowBlur = 0;
+    }
+    forumWaveAnimId = requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function renderForum(posts) {
+  const feed  = document.getElementById('forum-feed');
+  // If no posts array supplied (legacy synchronous path), use mock data
+  if (!posts) {
+    posts = getForumPosts();
+    if (forumActiveTab === 'myvibe') {
+      const fp = getUserFingerprint();
+      if (fp) {
+        posts = posts.slice().sort((a, b) => {
+          const distA = Math.hypot(a.pitchNorm - fp.pitchNorm, a.rhythmNorm - fp.rhythmNorm);
+          const distB = Math.hypot(b.pitchNorm - fp.pitchNorm, b.rhythmNorm - fp.rhythmNorm);
+          return distA - distB;
+        });
+      }
+    }
+  }
+
+  if (posts.length === 0) {
+    feed.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:3rem;line-height:1.8">No posts yet. Be the first to share!</div>';
+    return;
+  }
+
+  const likes = getLikes();
+  const user  = getCurrentUser();
+
+  feed.innerHTML = posts.map(post => {
+    const savedComments = getPostComments(post.id);
+    const comments  = savedComments !== null ? savedComments : post.comments;
+    const likeCount = likes[post.id] !== undefined ? likes[post.id] : post.likes;
+    const hasLiked  = user ? likes['liked_' + post.id + '_' + user.id] : false;
+    const isPlaying = forumPlayingId === post.id;
+
+    const commentsHtml = comments.map(c =>
+      '<div class="comment-item">' +
+        '<div class="comment-author">' + escapeHtml(c.username) + '</div>' +
+        '<div class="comment-text">' + escapeHtml(c.text) + '</div>' +
+      '</div>'
+    ).join('');
+
+    const commentInputHtml = user
+      ? '<div class="comment-input-row">' +
+          '<input class="comment-input" placeholder="Add a comment..." data-post-id="' + escapeHtml(post.id) + '" maxlength="200" />' +
+          '<button class="btn-send-comment" data-post-id="' + escapeHtml(post.id) + '">Send</button>' +
+        '</div>'
+      : '<p style="font-size:0.75rem;color:var(--text-dim)">Login to add comments.</p>';
+
+    return '<div class="post-card" data-post-id="' + escapeHtml(post.id) + '">' +
+      '<div class="post-card-header">' +
+        '<div class="post-author">' +
+          '<div class="post-author-name">' + escapeHtml(post.username) + '</div>' +
+          '<div class="post-author-fp">' + escapeHtml(post.fingerprint) + ' \u00b7 ' + escapeHtml(post.community) + '</div>' +
+        '</div>' +
+        '<div class="post-date">' + formatEntryDate(post.createdAt) + '</div>' +
+      '</div>' +
+      '<div class="post-title">' + escapeHtml(post.title) + '</div>' +
+      '<div class="post-desc">' + escapeHtml(post.description) + '</div>' +
+      '<div class="post-audio-bar">' +
+        '<button class="post-play-btn" data-post-id="' + escapeHtml(post.id) + '" aria-label="' + (isPlaying ? 'Stop' : 'Play') + '">' +
+          (isPlaying ? '&#9632;' : '&#9654;') +
+        '</button>' +
+        '<div class="post-waveform"><canvas id="fw-' + escapeHtml(post.id) + '" height="32"></canvas></div>' +
+      '</div>' +
+      '<div class="post-fp-chips">' +
+        '<span class="post-fp-chip">Pitch: ' + escapeHtml(post.pitchLabel) + '</span>' +
+        '<span class="post-fp-chip">Rhythm: ' + escapeHtml(post.rhythmLabel) + '</span>' +
+      '</div>' +
+      '<div class="post-footer">' +
+        '<div class="post-actions">' +
+          '<button class="post-action-btn' + (hasLiked ? ' liked' : '') + '" data-like-id="' + escapeHtml(post.id) + '">' +
+            '&#9825; ' + likeCount +
+          '</button>' +
+          '<button class="post-action-btn" data-toggle-comments="' + escapeHtml(post.id) + '">' +
+            '&#128172; ' + (post.isApiPost ? (post.commentCount || 0) : comments.length) + ' comments' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="post-comments-section" id="comments-' + escapeHtml(post.id) + '">' +
+        '<div class="comment-list">' + commentsHtml + '</div>' +
+        commentInputHtml +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // Wire play buttons
+  feed.querySelectorAll('.post-play-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pid = btn.dataset.postId;
+      const post = posts.find(p => p.id === pid);
+      if (!post) return;
+      if (forumPlayingId === pid) {
+        stopResultAudio();
+        forumPlayingId = null;
+        renderForum(posts);
+      } else {
+        stopResultAudio();
+        forumPlayingId = pid;
+        renderForum(posts);
+        if (!audioCtx) initAudio();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        playResultFragment(post.pitchNorm, post.rhythmNorm, () => {
+          forumPlayingId = null;
+          renderForum(posts);
+        });
+        startForumWaveAnim(pid);
+      }
+    });
+  });
+
+  // Wire like buttons
+  feed.querySelectorAll('[data-like-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!getCurrentUser()) { openAuth(); return; }
+      const pid  = btn.dataset.likeId;
+      const post = posts.find(p => p.id === pid);
+      if (post && post.isApiPost && getToken()) {
+        // Real API like toggle
+        btn.disabled = true;
+        try {
+          const resp = await apiFetch('/posts/' + pid + '/like', { method: 'POST' });
+          if (resp.ok) {
+            const data = await resp.json();
+            const lk   = getLikes();
+            const prev = lk[pid] !== undefined ? lk[pid] : (post.likes || 0);
+            lk[pid]    = data.liked ? prev + 1 : Math.max(0, prev - 1);
+            const key  = 'liked_' + pid + '_' + getCurrentUser().id;
+            lk[key]    = data.liked;
+            saveLikes(lk);
+            btn.classList.toggle('liked', data.liked);
+            btn.innerHTML = '&#9825; ' + lk[pid];
+          }
+        } catch(e) { /* ignore */ } finally { btn.disabled = false; }
+      } else {
+        // Offline/mock toggle
+        const lk  = getLikes();
+        const key = 'liked_' + pid + '_' + getCurrentUser().id;
+        if (lk[key]) return;
+        lk[key] = true;
+        lk[pid] = (lk[pid] !== undefined ? lk[pid] : (post ? post.likes : 0)) + 1;
+        saveLikes(lk);
+        btn.classList.add('liked');
+        btn.innerHTML = '&#9825; ' + lk[pid];
+      }
+    });
+  });
+
+  // Wire comment toggles
+  feed.querySelectorAll('[data-toggle-comments]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sec = document.getElementById('comments-' + btn.dataset.toggleComments);
+      if (sec) sec.classList.toggle('open');
+    });
+  });
+
+  // Wire send comment
+  feed.querySelectorAll('.btn-send-comment').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const pid   = btn.dataset.postId;
+      const input = feed.querySelector('.comment-input[data-post-id="' + CSS.escape(pid) + '"]');
+      const cu    = getCurrentUser();
+      if (!cu || !input) return;
+      const text = input.value.trim();
+      if (!text) return;
+      const post = posts.find(p => p.id === pid);
+      btn.disabled = true;
+      if (post && post.isApiPost && getToken()) {
+        // Real API comment
+        try {
+          const resp = await apiFetch('/posts/' + pid + '/comments', { method: 'POST', body: { content: text } });
+          if (resp.ok) {
+            input.value = '';
+            // Append comment locally without full re-render
+            const list = document.querySelector('#comments-' + CSS.escape(pid) + ' .comment-list');
+            if (list) {
+              const div = document.createElement('div');
+              div.className = 'comment-item';
+              div.innerHTML = '<div class="comment-author">' + escapeHtml(cu.username) + '</div>' +
+                              '<div class="comment-text">' + escapeHtml(text) + '</div>';
+              list.appendChild(div);
+            }
+            const sec = document.getElementById('comments-' + pid);
+            if (sec) sec.classList.add('open');
+          }
+        } catch(e) { /* ignore */ } finally { btn.disabled = false; }
+      } else {
+        // Offline/mock
+        const existing = getPostComments(pid) !== null ? getPostComments(pid) : (post ? post.comments : []);
+        savePostComments(pid, [...existing, { username: cu.username, text, createdAt: new Date().toISOString() }]);
+        input.value = '';
+        btn.disabled = false;
+        loadAndRenderForum();
+        const sec = document.getElementById('comments-' + pid);
+        if (sec) sec.classList.add('open');
+      }
+    });
+  });
+
+  // Draw static waveforms
+  posts.forEach(post => {
+    const canvas = document.getElementById('fw-' + post.id);
+    if (!canvas) return;
+    canvas.width = canvas.parentElement ? (canvas.parentElement.clientWidth || 200) : 200;
+    if (forumPlayingId !== post.id) drawStaticWaveform(canvas, post.pitchNorm, post.rhythmNorm);
+  });
+}
+
+/**
+ * Async forum loader. Tries real API first, falls back to mock data.
+ * For 'myvibe' tab uses /api/recommend (if authenticated).
+ */
+async function loadAndRenderForum() {
+  const feed = document.getElementById('forum-feed');
+  feed.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:3rem">Loading…</div>';
+  let posts = [];
+  try {
+    if (forumActiveTab === 'myvibe' && getToken()) {
+      const resp = await apiFetch('/recommend?limit=20');
+      if (resp.ok) {
+        const data = await resp.json();
+        posts = (data.posts || []).map(normalizePost);
+      }
+    }
+    if (posts.length === 0) {
+      const resp = await apiFetch('/posts?limit=20');
+      if (resp.ok) {
+        const data = await resp.json();
+        posts = (data.posts || []).map(normalizePost);
+      }
+    }
+  } catch(e) { /* API unreachable — use mock */ }
+
+  if (posts.length === 0) {
+    // Offline / cold-start: use local + mock
+    posts = getForumPosts();
+    if (forumActiveTab === 'myvibe') {
+      const fp = getUserFingerprint();
+      if (fp) {
+        posts = posts.slice().sort((a, b) =>
+          Math.hypot(a.pitchNorm - fp.pitchNorm, a.rhythmNorm - fp.rhythmNorm) -
+          Math.hypot(b.pitchNorm - fp.pitchNorm, b.rhythmNorm - fp.rhythmNorm)
+        );
+      }
+    }
+  } else {
+    // Prepend any locally-created posts (from localStorage) to API results
+    const localPosts = [];
+    try { localPosts.push(...JSON.parse(localStorage.getItem('resonance_posts') || '[]')); } catch(e) {}
+    posts = [...localPosts, ...posts];
+  }
+  renderForum(posts);
+}
+
+function openForum() {
+  // Sync tab button state (forumActiveTab may have been changed previously)
+  document.querySelectorAll('.forum-tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.forumTab === forumActiveTab);
+  });
+  const panel = document.getElementById('forum-panel');
+  panel.classList.add('visible');
+  panel.removeAttribute('aria-hidden');
+  loadAndRenderForum();
+}
+
+function closeForum() {
+  stopResultAudio();
+  forumPlayingId = null;
+  const panel = document.getElementById('forum-panel');
+  panel.classList.remove('visible');
+  panel.setAttribute('aria-hidden', 'true');
+}
+
+document.getElementById('btn-close-forum').addEventListener('click', closeForum);
+
+// Forum "All / My Vibe" tab switching
+document.querySelectorAll('.forum-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.forum-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    forumActiveTab = btn.dataset.forumTab;
+    loadAndRenderForum();
+  });
+});
+
+document.getElementById('btn-open-new-post').addEventListener('click', () => {
+  if (!getCurrentUser()) { openAuth(); return; }
+  openNewPostModal();
+});
+
+function openNewPostModal() {
+  const fp = getUserFingerprint();
+  document.getElementById('np-fp-preview').textContent = fp ? fp.fingerprint : 'none captured';
+  document.getElementById('np-title').value  = '';
+  document.getElementById('np-desc').value   = '';
+  document.getElementById('new-post-error').textContent = '';
+  const ov = document.getElementById('new-post-overlay');
+  ov.classList.add('visible');
+  ov.removeAttribute('aria-hidden');
+}
+
+function closeNewPostModal() {
+  const ov = document.getElementById('new-post-overlay');
+  ov.classList.remove('visible');
+  ov.setAttribute('aria-hidden', 'true');
+}
+
+document.getElementById('btn-close-new-post').addEventListener('click', closeNewPostModal);
+
+document.getElementById('btn-submit-post').addEventListener('click', async () => {
+  const user = getCurrentUser();
+  if (!user) { closeNewPostModal(); openAuth(); return; }
+  const title = document.getElementById('np-title').value.trim();
+  const desc  = document.getElementById('np-desc').value.trim();
+  const errEl = document.getElementById('new-post-error');
+  const btn   = document.getElementById('btn-submit-post');
+  if (!title) { errEl.textContent = 'Please enter a title.'; return; }
+  if (!desc)  { errEl.textContent = 'Please add a description.'; return; }
+
+  const fp    = getUserFingerprint();
+  const fpObj = fp ? getFingerprint(fp.pitchNorm, fp.rhythmNorm) : FINGERPRINTS[3];
+
+  btn.disabled = true; btn.textContent = 'Publishing…';
+  try {
+    if (getToken()) {
+      // Use real API with FormData
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', desc);
+      const moodSel = document.getElementById('np-mood');
+      const genre   = document.getElementById('np-genre');
+      if (moodSel && moodSel.value)  formData.append('moodTag',    moodSel.value);
+      if (genre   && genre.value)    formData.append('musicGenre', genre.value);
+      if (fp) formData.append('fingerprint', JSON.stringify({
+        label:     fp.fingerprint,
+        community: fpObj.community,
+        pitchNorm: fp.pitchNorm,
+        rhythmNorm: fp.rhythmNorm,
+        pitchLabel: fp.pitchLabel,
+        rhythmLabel: fp.rhythmLabel,
+      }));
+      formData.append('gameTags', JSON.stringify([]));
+      const audioFile = document.getElementById('np-audio');
+      if (audioFile && audioFile.files && audioFile.files[0]) {
+        formData.append('audio', audioFile.files[0]);
+      }
+      const resp = await apiFetch('/posts', { method: 'POST', body: formData });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        errEl.textContent = data.error || 'Post failed.';
+        return;
+      }
+    } else {
+      // Offline: save to localStorage
+      const post = {
+        id: Date.now().toString(36), title, description: desc,
+        username:    user.username,
+        fingerprint: fp ? fp.fingerprint  : 'Still Waters',
+        community:   fpObj.community,
+        pitchNorm:   fp ? fp.pitchNorm    : 0.5,
+        rhythmNorm:  fp ? fp.rhythmNorm   : 0.5,
+        pitchLabel:  fp ? fp.pitchLabel   : 'Low',
+        rhythmLabel: fp ? fp.rhythmLabel  : 'Sparse',
+        createdAt:   new Date().toISOString(),
+        likes: 0, comments: [],
+      };
+      const real = [];
+      try { real.push(...JSON.parse(localStorage.getItem('resonance_posts') || '[]')); } catch(e) {}
+      real.unshift(post);
+      try { localStorage.setItem('resonance_posts', JSON.stringify(real)); } catch(e) {}
+    }
+    closeNewPostModal();
+    forumActiveTab = 'all';
+    openForum();
+  } catch(e) {
+    errEl.textContent = 'Failed to publish. Please try again.';
+  } finally { btn.disabled = false; btn.textContent = 'Publish Post ›'; }
+});
+
+document.getElementById('btn-publish-forum').addEventListener('click', () => {
+  if (!getCurrentUser()) { openAuth(); return; }
+  openNewPostModal();
+});
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 3 — ENHANCED VISUAL EFFECTS
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Returns 0..1 average amplitude from current analyser */
+function getAmplitude() {
+  if (!analyser) return 0;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  let sum = 0;
+  for (let i = 0; i < data.length; i++) sum += data[i];
+  return sum / (data.length * 255);
+}
+
+/* ── Replace drawPad with an enhanced version ─────────────────── */
+(function patchDrawPad() {
+  if (padAnimId) { cancelAnimationFrame(padAnimId); padAnimId = null; }
+  drawPad = function drawPadEnhanced() {
+    const W = echoPad.width, H = echoPad.height;
+    padCtx.clearRect(0, 0, W, H);
+
+    const bg = padCtx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, 'rgba(13,21,36,0.9)');
+    bg.addColorStop(1, 'rgba(7,9,15,0.9)');
+    padCtx.fillStyle = bg;
+    padCtx.beginPath();
+    if (padCtx.roundRect) {
+      padCtx.roundRect(0, 0, W, H, 14);
+    } else {
+      const r = 14;
+      padCtx.moveTo(r, 0);
+      padCtx.lineTo(W - r, 0); padCtx.arcTo(W, 0, W, r, r);
+      padCtx.lineTo(W, H - r); padCtx.arcTo(W, H, W - r, H, r);
+      padCtx.lineTo(r, H);     padCtx.arcTo(0, H, 0, H - r, r);
+      padCtx.lineTo(0, r);     padCtx.arcTo(0, 0, r, 0, r);
+      padCtx.closePath();
+    }
+    padCtx.fill();
+
+    const amp = getAmplitude();
+    if (amp > 0.02) {
+      const cx2 = state.rhythmNorm * W, cy2 = (1 - state.pitchNorm) * H;
+      const bgGlow = padCtx.createRadialGradient(cx2, cy2, 0, cx2, cy2, W * (0.5 + amp));
+      bgGlow.addColorStop(0,   'rgba(74,243,255,' + (amp * 0.13).toFixed(3) + ')');
+      bgGlow.addColorStop(0.5, 'rgba(139,92,246,' + (amp * 0.07).toFixed(3) + ')');
+      bgGlow.addColorStop(1,   'rgba(0,0,0,0)');
+      padCtx.fillStyle = bgGlow;
+      padCtx.fillRect(0, 0, W, H);
+    }
+
+    padCtx.strokeStyle = 'rgba(74,243,255,0.07)';
+    padCtx.lineWidth   = 1;
+    for (let i = 1; i < 4; i++) {
+      padCtx.beginPath(); padCtx.moveTo(W * i / 4, 0); padCtx.lineTo(W * i / 4, H); padCtx.stroke();
+      padCtx.beginPath(); padCtx.moveTo(0, H * i / 4); padCtx.lineTo(W, H * i / 4); padCtx.stroke();
+    }
+
+    const now = Date.now() * 0.001;
+    const boost = 1 + amp * 4;
+    PAD_PARTICLES.forEach(p => {
+      p.x += p.vx * boost; p.y += p.vy * boost;
+      if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+      if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
+      const alpha = 0.2 + 0.1 * Math.sin(now + p.a * 6) + amp * 0.35;
+      padCtx.beginPath();
+      padCtx.arc(p.x * W, p.y * H, p.r * (1 + amp * 2.5), 0, Math.PI * 2);
+      padCtx.fillStyle = 'rgba(74,243,255,' + Math.min(alpha, 0.9).toFixed(3) + ')';
+      padCtx.fill();
+    });
+
+    if (trailPoints.length > 1) {
+      padCtx.beginPath();
+      padCtx.moveTo(trailPoints[0].x * W, trailPoints[0].y * H);
+      for (let i = 1; i < trailPoints.length; i++) padCtx.lineTo(trailPoints[i].x * W, trailPoints[i].y * H);
+      padCtx.strokeStyle = 'rgba(74,243,255,' + (0.25 + amp * 0.4).toFixed(3) + ')';
+      padCtx.lineWidth   = 2 + amp * 3;
+      padCtx.lineJoin = 'round'; padCtx.lineCap = 'round';
+      padCtx.stroke();
+    }
+
+    const cx   = state.rhythmNorm * W;
+    const cy   = (1 - state.pitchNorm) * H;
+    const hr   = 55 + amp * 60;
+    const halo = padCtx.createRadialGradient(cx, cy, 0, cx, cy, hr);
+    halo.addColorStop(0,   'rgba(74,243,255,' + (0.18 + amp * 0.25).toFixed(3) + ')');
+    halo.addColorStop(0.4, 'rgba(139,92,246,' + (0.08 + amp * 0.1).toFixed(3) + ')');
+    halo.addColorStop(1,   'rgba(0,0,0,0)');
+    padCtx.beginPath();
+    padCtx.arc(cx, cy, hr, 0, Math.PI * 2);
+    padCtx.fillStyle = halo;
+    padCtx.fill();
+
+    const pulse = 0.7 + 0.3 * Math.sin(now * 4);
+    padCtx.beginPath();
+    padCtx.arc(cx, cy, 8 + amp * 5, 0, Math.PI * 2);
+    padCtx.fillStyle = 'rgba(74,243,255,' + pulse.toFixed(3) + ')';
+    padCtx.shadowColor = '#4af3ff';
+    padCtx.shadowBlur  = 14 + amp * 20;
+    padCtx.fill();
+    padCtx.shadowBlur = 0;
+
+    padCtx.strokeStyle = 'rgba(74,243,255,' + (0.15 + amp * 0.2).toFixed(3) + ')';
+    padCtx.lineWidth   = 1;
+    padCtx.setLineDash([4, 6]);
+    padCtx.beginPath(); padCtx.moveTo(cx, 0); padCtx.lineTo(cx, H); padCtx.stroke();
+    padCtx.beginPath(); padCtx.moveTo(0, cy); padCtx.lineTo(W, cy);  padCtx.stroke();
+    padCtx.setLineDash([]);
+
+    /* Frequency bar strip (bottom ~16% of pad, shown when audio active) */
+    if (analyser && state.hasInteracted) {
+      const barData = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(barData);
+      const barCount = 32;
+      const barW     = W / barCount - 1;
+      const stripH   = H * 0.16;
+      const stripY   = H - stripH;
+      padCtx.fillStyle = 'rgba(7,9,15,0.55)';
+      padCtx.fillRect(0, stripY, W, stripH);
+      for (let i = 0; i < barCount; i++) {
+        const idx = Math.floor(i * barData.length / barCount);
+        const v   = barData[idx] / 255;
+        const bH  = v * stripH * 0.95;
+        const t   = i / barCount;
+        const r   = Math.round(74  + (139 - 74)  * t);
+        const g   = Math.round(243 + (92  - 243) * t);
+        const b   = Math.round(255);
+        padCtx.fillStyle   = 'rgb(' + r + ',' + g + ',' + b + ')';
+        padCtx.shadowColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+        padCtx.shadowBlur  = 4;
+        padCtx.fillRect(i * (barW + 1), stripY + (stripH - bH), barW, bH);
+      }
+      padCtx.shadowBlur = 0;
+    }
+
+    padAnimId = requestAnimationFrame(drawPad);
+  };
+})();
+
+/* ── Replace drawResultWave with colourful EQ bars + waveform ─── */
+(function patchDrawResultWave() {
+  drawResultWave = function drawResultWaveEnhanced() {
+    const W = resultWave.width, H = resultWave.height;
+    waveCtx.clearRect(0, 0, W, H);
+
+    if (!analyser) {
+      waveAnimId = requestAnimationFrame(drawResultWave);
+      return;
+    }
+
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(freqData);
+    const barCount = 48;
+    const barW     = W / barCount - 1;
+    const halfH    = H / 2;
+    for (let i = 0; i < barCount; i++) {
+      const idx   = Math.floor(i * freqData.length / barCount);
+      const v     = freqData[idx] / 255;
+      const bH    = v * halfH * 0.95;
+      const t     = i / barCount;
+      const r     = Math.round(74  + (248 - 74)  * t);
+      const g     = Math.round(243 + (113 - 243) * t);
+      const b     = Math.round(255 + (133 - 255) * t);
+      const alpha = 0.55 + v * 0.45;
+      waveCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha.toFixed(3) + ')';
+      waveCtx.fillRect(i * (barW + 1), H - bH, barW, bH);
+    }
+
+    const timeData = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteTimeDomainData(timeData);
+    waveCtx.beginPath();
+    const sliceW = W / timeData.length;
+    for (let i = 0; i < timeData.length; i++) {
+      const v = timeData[i] / 128;
+      const y = (v * halfH) / 2;
+      if (i === 0) waveCtx.moveTo(0, y); else waveCtx.lineTo(i * sliceW, y);
+    }
+    waveCtx.strokeStyle = '#4af3ff';
+    waveCtx.lineWidth   = 2;
+    waveCtx.shadowColor = '#4af3ff';
+    waveCtx.shadowBlur  = 8;
+    waveCtx.stroke();
+    waveCtx.shadowBlur  = 0;
+
+    waveAnimId = requestAnimationFrame(drawResultWave);
+  };
+})();
+
+/* ══════════════════════════════════════════════════════════════════
+   FEATURE 4 — USER PROFILE PANEL
+   ══════════════════════════════════════════════════════════════════ */
+
+let _profileFollowingId = null;
+
+function closeProfile() {
+  const panel = document.getElementById('profile-panel');
+  panel.classList.remove('visible');
+  panel.setAttribute('aria-hidden', 'true');
+}
+
+async function openProfile(usernameOrId) {
+  const panel = document.getElementById('profile-panel');
+  panel.classList.add('visible');
+  panel.removeAttribute('aria-hidden');
+  document.getElementById('profile-error').textContent = '';
+  document.getElementById('profile-displayname').textContent = usernameOrId;
+  document.getElementById('profile-posts-list').innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;padding:1rem 0">Loading…</div>';
+  document.getElementById('profile-follow-row').style.display = 'none';
+
+  try {
+    const resp = await apiFetch('/users/' + encodeURIComponent(usernameOrId));
+    if (!resp.ok) { document.getElementById('profile-error').textContent = 'Profile not found.'; return; }
+    const data = await resp.json();
+    _profileFollowingId = data.id;
+
+    document.getElementById('profile-displayname').textContent = data.displayName || data.username;
+    document.getElementById('profile-username-sub').textContent = '@' + data.username +
+      ' · Joined ' + new Date(data.createdAt).toLocaleDateString();
+    document.getElementById('profile-bio').textContent = data.bio || '';
+    document.getElementById('profile-posts').textContent     = data.postCount    || 0;
+    document.getElementById('profile-followers').textContent = data.followerCount|| 0;
+    document.getElementById('profile-following').textContent = data.followingCount||0;
+
+    // Badges
+    const badgesEl = document.getElementById('profile-badges');
+    badgesEl.innerHTML = (data.userBadges || []).map(ub =>
+      '<span style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.4);border-radius:999px;padding:0.2rem 0.65rem;font-size:0.68rem;color:#c4b5fd">' +
+      escapeHtml(ub.badge?.name || '') + '</span>'
+    ).join('');
+
+    // Show follow button for other users
+    const cu = getCurrentUser();
+    if (cu && cu.id !== data.id && getToken()) {
+      const followRow = document.getElementById('profile-follow-row');
+      followRow.style.display = 'block';
+    }
+
+    // Recent posts
+    const postsEl = document.getElementById('profile-posts-list');
+    const userPosts = data.posts || [];
+    if (userPosts.length === 0) {
+      postsEl.innerHTML = '<div style="color:var(--text-dim);font-size:0.78rem">No posts yet.</div>';
+    } else {
+      postsEl.innerHTML = userPosts.slice(0, 10).map(p =>
+        '<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem;cursor:pointer" onclick="openForumAndHighlight(\'' + escapeHtml(p.id) + '\')">' +
+          '<div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:0.2rem">' + escapeHtml(p.title || '(untitled)') + '</div>' +
+          '<div style="font-size:0.7rem;color:var(--text-dim)">' + formatEntryDate(p.createdAt) + ' · ' +
+          '&#9825; ' + (p.likeCount || 0) + '</div>' +
+        '</div>'
+      ).join('');
+    }
+  } catch(e) {
+    document.getElementById('profile-error').textContent = 'Could not load profile (offline?).';
+    document.getElementById('profile-posts-list').innerHTML = '';
+  }
+}
+
+function openForumAndHighlight(postId) {
+  closeProfile();
+  openForum();
+}
+
+document.getElementById('btn-close-profile').addEventListener('click', closeProfile);
+
+document.getElementById('btn-profile-follow').addEventListener('click', async () => {
+  if (!_profileFollowingId || !getToken()) return;
+  const btn = document.getElementById('btn-profile-follow');
+  btn.disabled = true;
+  try {
+    const resp = await apiFetch('/users/' + _profileFollowingId + '/follow', { method: 'POST' });
+    if (resp.ok) {
+      const data = await resp.json();
+      btn.textContent = data.following ? 'Unfollow' : 'Follow';
+      btn.classList.toggle('btn-outline', !data.following);
+    }
+  } catch(e) { /* ignore */ } finally { btn.disabled = false; }
+});
+</script>
+</body>
+</html>

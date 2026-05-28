@@ -1,0 +1,266 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(uuid())
+  username      String   @unique @db.VarChar(50)
+  email         String   @unique @db.VarChar(255)
+  passwordHash  String?  @map("password_hash")
+  displayName   String?  @map("display_name") @db.VarChar(100)
+  avatarUrl     String?  @map("avatar_url")
+  bio           String?  @db.Text
+  
+  // OAuth
+  steamId       String?  @unique @map("steam_id")
+  googleId      String?  @unique @map("google_id")
+  
+  // Copyright preference for created audio
+  copyrightLicense String @default("CC-BY-NC") @map("copyright_license")
+  
+  // Stats (denormalized for performance)
+  postCount        Int @default(0) @map("post_count")
+  followerCount    Int @default(0) @map("follower_count")
+  followingCount   Int @default(0) @map("following_count")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt       @map("updated_at")
+  
+  posts          Post[]
+  audioFeatures  AudioFeature[]
+  interactions   Interaction[]
+  gameLibrary    GameLibrary[]
+  
+  // Social graph
+  following      Follow[] @relation("follower")
+  followers      Follow[] @relation("following")
+  
+  // Achievements
+  userBadges     UserBadge[]
+  
+  // Recommendation profile (128-dim vector stored as JSON array)
+  userProfile    UserProfile?
+  
+  @@map("users")
+}
+
+model UserProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 128-dim preference vector (updated from behavior tracking)
+  preferenceVector Float[] @map("preference_vector")
+  
+  // Game preferences: { gameId: weight }
+  gamePreferences Json    @default("{}") @map("game_preferences")
+  
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@map("user_profiles")
+}
+
+// ─── Social Graph ─────────────────────────────────────────────────────────────
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  follower    User     @relation("follower",  fields: [followerId],  references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+// ─── Posts ────────────────────────────────────────────────────────────────────
+
+model Post {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title       String   @db.VarChar(200)
+  content     String?  @db.Text
+  
+  // Audio
+  audioUrl    String?  @map("audio_url")
+  audioDuration Float? @map("audio_duration")
+  
+  // 3D tags: game × mood × music_genre
+  gameTags    String[] @map("game_tags")
+  moodTag     String?  @map("mood_tag")
+  musicGenre  String?  @map("music_genre")
+  
+  // Emotional fingerprint (saved from frontend)
+  fingerprint Json?
+  
+  // Copyright
+  license     String   @default("CC-BY-NC")
+  
+  // Stats (denormalized)
+  likeCount   Int @default(0) @map("like_count")
+  commentCount Int @default(0) @map("comment_count")
+  playCount   Int @default(0) @map("play_count")
+  shareCount  Int @default(0) @map("share_count")
+  
+  // Hot score (recalculated periodically)
+  hotScore    Float @default(0) @map("hot_score")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt       @map("updated_at")
+  
+  audioFeature AudioFeature?
+  interactions Interaction[]
+  comments     Comment[]
+  
+  @@index([userId])
+  @@index([hotScore(sort: Desc)])
+  @@index([moodTag])
+  @@index([musicGenre])
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String   @map("post_id")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  content   String   @db.Text
+  likeCount Int      @default(0) @map("like_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@index([postId])
+  @@map("comments")
+}
+
+// ─── Audio Features ───────────────────────────────────────────────────────────
+
+model AudioFeature {
+  id     String @id @default(uuid())
+  postId String @unique @map("post_id")
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Raw features
+  spectralCentroid Float   @map("spectral_centroid")
+  zeroCrossingRate Float   @map("zero_crossing_rate")
+  energy           Float
+  tempo            Float
+  
+  // MFCCs (first 13)
+  mfcc             Float[] @map("mfcc")
+  
+  // Full 128-dim normalized embedding vector
+  embedding        Float[] @map("embedding")
+  
+  // Pinecone vector ID (for retrieval)
+  pineconeId       String? @map("pinecone_id")
+  
+  // Processing status
+  status           AudioFeatureStatus @default(PENDING)
+  errorMessage     String? @map("error_message")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt       @map("updated_at")
+  
+  @@index([userId])
+  @@map("audio_features")
+}
+
+enum AudioFeatureStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+}
+
+// ─── Game Library ─────────────────────────────────────────────────────────────
+
+model GameLibrary {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steamAppId  String   @map("steam_app_id")
+  name        String
+  iconUrl     String?  @map("icon_url")
+  playtimeMinutes Int  @default(0) @map("playtime_minutes")
+  achievementCount Int @default(0) @map("achievement_count")
+  lastPlayedAt DateTime? @map("last_played_at")
+  syncedAt    DateTime  @default(now()) @map("synced_at")
+  
+  @@unique([userId, steamAppId])
+  @@index([userId])
+  @@map("game_library")
+}
+
+// ─── Interactions (behavior tracking) ────────────────────────────────────────
+
+model Interaction {
+  id        String          @id @default(uuid())
+  userId    String          @map("user_id")
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String          @map("post_id")
+  post      Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type      InteractionType
+  
+  // play_duration in seconds (for PLAY type)
+  duration  Float?
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@index([userId])
+  @@index([postId])
+  @@index([type])
+  @@map("interactions")
+}
+
+enum InteractionType {
+  PLAY
+  SKIP
+  LIKE
+  UNLIKE
+  SAVE
+  UNSAVE
+  SHARE
+  COMMENT
+}
+
+// ─── Achievements ─────────────────────────────────────────────────────────────
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100)
+  description String   @db.Text
+  iconUrl     String   @map("icon_url")
+  condition   Json     // { type: "post_count", threshold: 10 } etc.
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  userBadges  UserBadge[]
+  
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String   @map("badge_id")
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  unlockedAt DateTime @default(now()) @map("unlocked_at")
+  
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
